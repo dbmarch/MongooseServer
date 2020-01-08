@@ -13,6 +13,7 @@ public:
 
   static void EventHandler(struct mg_connection *c, int ev, void *p);
 
+  void Tick();
 
  protected:
   const char *s_http_port {"8000"};

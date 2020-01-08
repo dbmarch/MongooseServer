@@ -28,7 +28,7 @@ void MongooseWebServer::StartServer()
 
 void MongooseWebServer::EventHandler(struct mg_connection *c, int ev, void *p) {
   struct http_message *hm = (struct http_message *) p;
-
+  MongooseWebServer * pThis = static_cast<MongooseWebServer*>(c->user_data);
   switch (ev) {
     case MG_EV_HTTP_REQUEST:
        printf ("%s MG_EV_HTTP_REQUEST\n", __func__);;
@@ -45,5 +45,11 @@ void MongooseWebServer::EventHandler(struct mg_connection *c, int ev, void *p) {
 
     default:
       printf ("%s UKNOWN %d\n", __func__, ev);
+      pThis->Tick();
   }
+}
+
+
+void MongooseWebServer::Tick() {
+  printf ("tick\n");
 }
