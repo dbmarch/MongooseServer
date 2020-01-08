@@ -15,7 +15,10 @@ DEPS 				:= $(OBJS:.o=.d)
 INC_DIRS 		:= include/ src/ $(MONGOOSE_DIR)
 INC_FLAGS 	:= $(addprefix -I,$(INC_DIRS))
 
-CFLAGS    	:= -Wall -O3 -g -MMD -MP  -DMG_ENABLE_THREADS $(INC_FLAGS)
+MONGOOSE_FLAGS := -D MG_ENABLE_HTTP -D MG_ENABLE_HTTP_WEBSOCKET -D MG_ENABLE_GETADDRINFO 
+
+CFLAGS    	:= -Wall -O3 -g -MMD -MP  -DMG_ENABLE_THREADS $(INC_FLAGS) $(MONGOOSE_FLAGS)
+
 CPPFLAGS 		:=  $(CFLAGS) -std=c++11 
 LDFLAGS   	:= -lm -lpthread 
 
