@@ -1,23 +1,33 @@
+#include <cstring>
 #include <signal.h>
 #include <exception>
 #include <execinfo.h>
 
 #include <cstring>
 #include "MongooseWebServer.h"
+#include "Route.h"
 
 
-
-MongooseWebServer::MongooseWebServer() 
+//-----------------------------------------------------------------------------
+// Function:  MongooseWebServer::MongooseWebServer
+//-----------------------------------------------------------------------------
+MongooseWebServer::MongooseWebServer(Router r) :
+  mRouter {r} 
 {
  std::memset (&s_http_server_opts, 0, sizeof(mg_serve_http_opts));
  s_http_server_opts.document_root = "public";
 }
 
+//-----------------------------------------------------------------------------
+// Function:  MongooseWebServer::~MongooseWebServer
+//-----------------------------------------------------------------------------
 MongooseWebServer::~MongooseWebServer() 
 {
 }
 
-
+//-----------------------------------------------------------------------------
+// Function:  MongooseWebServer::StartServer
+//-----------------------------------------------------------------------------
 void MongooseWebServer::StartServer() 
 {
   struct mg_connection *c;
@@ -45,6 +55,17 @@ void MongooseWebServer::StartServer()
 
 }
 
+//-----------------------------------------------------------------------------
+// Function:  MongooseWebServer::ProcessRoute
+//-----------------------------------------------------------------------------
+bool MongooseWebServer::ProcessRoute (struct mg_connection *nc, struct http_message *hm) {
+    return mRouter.ProcessRoute(nc, hm);
+  }
+
+
+//-----------------------------------------------------------------------------
+// Function:  MongooseWebServer::EventHandler
+//-----------------------------------------------------------------------------
 void MongooseWebServer::EventHandler(struct mg_connection *nc, int ev, void *p) {
   struct http_message *hm = (struct http_message *) p;
   MongooseWebServer * pThis = static_cast<MongooseWebServer*>(nc->mgr->user_data);
@@ -56,14 +77,13 @@ void MongooseWebServer::EventHandler(struct mg_connection *nc, int ev, void *p) 
 
   switch (ev) {
     case MG_EV_HTTP_REQUEST:
+    {
        printf ("%s MG_EV_HTTP_REQUEST\n", __func__);
-
-       mg_serve_http(nc, hm, pThis->GetServerOptions());  // Serves static content
-
-      // We have received an HTTP request. Parsed request is contained in `hm`.
-      // Send HTTP reply to the client which shows full original request.
-      // mg_send_head(c, 200, hm->message.len, "Content-Type: text/plain");
-      // mg_printf(c, "%.*s", (int)hm->message.len, hm->message.p);
+       if (pThis->ProcessRoute(nc, hm)) {
+       } else {
+         mg_serve_http(nc, hm, pThis->GetServerOptions());  // Serves static content
+       } 
+    }
       break;
 
     case MG_EV_HTTP_CHUNK:
@@ -77,12 +97,30 @@ void MongooseWebServer::EventHandler(struct mg_connection *nc, int ev, void *p) 
       pThis->HandleSsiCall(nc, (const char*) p);
       break;
 
+    case MG_EV_SEND:
+      printf ("%s MG_EV_SEND\n", __func__);
+      break;
+
+    case MG_EV_CLOSE:
+      printf ("%s MG_EV_CLOSE\n", __func__);
+      break;
+    
+    case MG_EV_POLL:
+      break;
+
+    case MG_EV_ACCEPT:
+      printf ("%s MG_EV_ACCEPT\n", __func__);
+      break;
+
     default:
       printf ("%s UKNOWN %d\n", __func__, ev);
       break;
   }
 }
 
+//-----------------------------------------------------------------------------
+// Function:  MongooseWebServer::HandleSsiCall
+//-----------------------------------------------------------------------------
 void MongooseWebServer::HandleSsiCall(struct mg_connection *nc, const char *param){
   if (strcmp(param, "setting1") == 0) {
     mg_printf_html_escape(nc, "%s", s_settings.setting1);
@@ -91,6 +129,3 @@ void MongooseWebServer::HandleSsiCall(struct mg_connection *nc, const char *para
   }
 }
 
-void MongooseWebServer::Tick() {
-  printf ("tick\n");
-}
