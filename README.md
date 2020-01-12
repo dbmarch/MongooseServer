@@ -30,3 +30,22 @@ To start the server:
 ```
 
     Browse localhost:8000
+
+
+### BUILDING CLIENT
+
+To build a new product file set:
+```
+  cd client
+  npm i
+  npm run build
+```
+
+
+To run the dev server:
+To build a new product file set:
+```
+  cd client
+  npm i
+  npm run start
+```
