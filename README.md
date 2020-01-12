@@ -6,6 +6,8 @@ This project includes a few 3rd party open source packages:
 - jsoncpp
 - mongoose
 
+This project has a submodule with a React App Client:
+- client
 
 ### BUILDING
 
