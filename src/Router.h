@@ -9,13 +9,18 @@
 class Router {
 public:
 
-  Router() {}
-  virtual ~Router() {}
+  Router();
+  Router(Router&& a); // Move constructor
+
+  virtual ~Router();
+  
+
+  Router& operator=(Router&& a);// Move assignment
+  // Router& operator=(const Router& a);
 
   void AddRoute (Route * route);
 
   bool ProcessRoute (struct mg_connection *nc, struct http_message *hm);
-
 
  protected:
   std::vector <Route*> mRoutes;

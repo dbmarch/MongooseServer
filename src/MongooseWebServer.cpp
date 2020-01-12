@@ -11,9 +11,10 @@
 //-----------------------------------------------------------------------------
 // Function:  MongooseWebServer::MongooseWebServer
 //-----------------------------------------------------------------------------
-MongooseWebServer::MongooseWebServer(Router r) :
-  mRouter {r} 
+MongooseWebServer::MongooseWebServer(Router &r) :
+  mRouter {r}
 {
+ printf ("%s\n", __func__);
  std::memset (&s_http_server_opts, 0, sizeof(mg_serve_http_opts));
  s_http_server_opts.document_root = "public";
 }
@@ -23,6 +24,7 @@ MongooseWebServer::MongooseWebServer(Router r) :
 //-----------------------------------------------------------------------------
 MongooseWebServer::~MongooseWebServer() 
 {
+  printf ("%s\n", __func__);
 }
 
 //-----------------------------------------------------------------------------
@@ -80,6 +82,7 @@ void MongooseWebServer::EventHandler(struct mg_connection *nc, int ev, void *p) 
     {
        printf ("%s MG_EV_HTTP_REQUEST\n", __func__);
        if (pThis->ProcessRoute(nc, hm)) {
+         printf ("Route Processed\n");
        } else {
          mg_serve_http(nc, hm, pThis->GetServerOptions());  // Serves static content
        } 

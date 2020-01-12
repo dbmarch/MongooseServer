@@ -5,7 +5,7 @@ class MongooseWebServer {
 
 public:
 
-  MongooseWebServer (Router r);
+  MongooseWebServer (Router &r);
 
   ~MongooseWebServer ();
 
@@ -26,7 +26,7 @@ public:
 
   struct mg_mgr mgr;
 
-  Router mRouter;
+  Router &mRouter;
 
   struct device_settings {
     char setting1[100];

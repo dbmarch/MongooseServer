@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "MongooseWebServer.h"
 #include "Router.h"
+#include "json.h"
 
 
 //-----------------------------------------------------------------------------
@@ -16,15 +17,38 @@ bool Hello (struct mg_connection *nc, struct http_message *hm) {
 }
 
 //-----------------------------------------------------------------------------
+// Function: Hello test route
+//-----------------------------------------------------------------------------
+bool JsonHello (struct mg_connection *nc, struct http_message *hm) {
+  Json::Value root;
+  Json::Value data;
+
+  printf ("%s\n", __func__);
+
+  root["message"] = "Hello";
+  data["value"] = 3;
+  data["name"] = "name";
+  root["data"] = data;
+
+  Json::StreamWriterBuilder builder;
+  const std::string json_file = Json::writeString(builder, root);
+  
+  mg_send_head(nc, 200, json_file.size(), "Content-Type: application/json");
+  mg_send(nc, json_file.c_str(), json_file.size());
+  return true;
+}
+
+
+
+//-----------------------------------------------------------------------------
 // Function: main
 //-----------------------------------------------------------------------------
 int main(void) {
-  Router r;
+  Router r; // Set up the routes and provide them to the server.
   r.AddRoute(new Route (Route::GET, "/hello", Hello));
-
+  r.AddRoute(new Route (Route::GET, "/json", JsonHello));
+  
   MongooseWebServer webServer(r);
-
-
   webServer.StartServer();
 
   return 0;
