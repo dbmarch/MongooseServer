@@ -16,7 +16,7 @@ MongooseWebServer::MongooseWebServer(Router &r) :
 {
  printf ("%s\n", __func__);
  std::memset (&s_http_server_opts, 0, sizeof(mg_serve_http_opts));
- s_http_server_opts.document_root = "public";
+ s_http_server_opts.document_root = "client/build";
 }
 
 //-----------------------------------------------------------------------------
