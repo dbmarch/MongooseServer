@@ -14,7 +14,8 @@ class Route {
        POST,
        PUT,
        PATCH,
-       DELETE
+       DELETE,
+       OPTIONS,
     };
     
   using RouteCallback = bool (*)(struct mg_connection *nc, struct http_message *hm) ;
@@ -42,7 +43,8 @@ class Route {
       {Route::POST,  "POST"},
       {Route::PUT,   "PUT"},
       {Route::PATCH, "PATCH"},
-      {Route:: DELETE, "DELETE"}
+      {Route::DELETE, "DELETE"},
+      {Route::OPTIONS, "OPTIONS"}
     };
 
 };

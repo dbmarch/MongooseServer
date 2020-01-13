@@ -35,7 +35,9 @@ bool Route::Process(struct mg_connection *nc, struct http_message *hm) {
 // Function: Route::IsMatch
 //-----------------------------------------------------------------------------
 bool  Route::IsMatch(Route::Verb verb, std::string path) {
-  if (verb == mVerb && path == mRoute) {
+  if (mRoute == std::string("*") && verb == mVerb) {
+    return true;
+  } else if (verb == mVerb && path == mRoute) {
     return true;
   }
   return false;
