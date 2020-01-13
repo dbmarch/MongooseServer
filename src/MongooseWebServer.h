@@ -19,6 +19,10 @@ public:
 
   void HandleSsiCall(struct mg_connection *nc, const char *param);
 
+  int IsWebsocket(const struct mg_connection *nc);
+
+  void Broadcast(struct mg_connection *nc, const struct mg_str msg);
+
   struct mg_serve_http_opts s_http_server_opts;
 
  protected:
