@@ -14,6 +14,10 @@ JSONCPP_DIR ?= ./jsoncpp
 JSONCPP_LIB ?= $(JSONCPP_DIR)/src/lib_json/libjsoncpp.a
 JSONCPP_INC ?= $(JSONCPP_DIR)/include/json
 
+CLIENT_DIR ?= ./client
+CLIENT_PUBLIC ?= $(CLIENT_DIR)/PUBLIC
+CLIENT_BUILD ?= $(CLIENT_PUBLIC)/manifest.json
+
 SRCS  			:= $(shell find $(SRC_DIR) -name *.cpp -or -name *.c )
 OBJS 				:= $(foreach src, $(notdir $(SRCS)),  $(addprefix obj/, $(addsuffix .o, $(basename $(src) ) )))
 DEPS 				:= $(OBJS:.o=.d)
@@ -34,7 +38,7 @@ $(info OBJS $(OBJS))
 $(info DEPS $(DEPS))
 $(info BUILD_DIR $(BUILD_DIR))
 
-$(TARGET_DIR)/$(TARGET_EXE): $(MONGOOSE_OBJ) $(OBJS) $(JSONCPP_LIB)
+$(TARGET_DIR)/$(TARGET_EXE): $(MONGOOSE_OBJ) $(OBJS) $(JSONCPP_LIB) $(CLIENT_BUILD)
 	@mkdir -p $(TARGET_DIR)
 	$(CC) -o $(TARGET_DIR)/$(TARGET_EXE) $(OBJS) $(MONGOOSE_OBJ) $(LDFLAGS) $(JSONCPP_LIB)
 
@@ -58,6 +62,12 @@ $(JSONCPP_LIB):
 	cmake CMakeLists.txt
 	make 
 	@echo "JSONCPP Build Complete"
+
+.ONESHELL:
+$(CLIENT_BUILD):
+	cd $(CLIENT_DIR)
+	npm run build
+	@echo "CLIENT PRODUCTION BUILD COMPLETE"
 
 clean:
 	$(RM) -r $(BUILD_DIR)

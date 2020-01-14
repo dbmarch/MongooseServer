@@ -11,9 +11,11 @@
 bool HandleCors (struct mg_connection *nc, struct http_message *hm) {
   printf ("CORS ROUTE\n");
   mg_send_head(nc, 200, 0, "Access-Control-Allow-Methods: POST, GET, OPTIONS\r\n"
-  "Access-Control-Allow-Origin: *\r\nContent-Type: application/json\r\nAccess-Control-Allow-Headers: Content-Type\r\n");
+  "Access-Control-Allow-Origin: *\r\nAccess-Control-Allow-Headers: Content-Type\r\n");
   return true;
 }
+
+
 
 //-----------------------------------------------------------------------------
 // Function: Hello test route
@@ -44,7 +46,9 @@ bool JsonHello (struct mg_connection *nc, struct http_message *hm) {
   Json::StreamWriterBuilder builder;
   const std::string json_file = Json::writeString(builder, root);
   
-  mg_send_head(nc, 200, json_file.size(), "Content-Type: application/json\r\n" );
+  mg_send_head(nc, 200, json_file.size(), "Content-Type: application/json\r\n"
+  // "Access-Control-Allow-Origin: *\r\nAccess-Control-Allow-Headers: Content-Type\r\n"
+   );
   mg_send(nc, json_file.c_str(), json_file.size());
   printf ("Sent CORS header\n");
   return true;
