@@ -1,5 +1,6 @@
 #include <iostream>
 #include <stdio.h>
+#include <typeinfo>       // operator typeid
 #include "MongooseWebServer.h"
 #include "Router.h"
 #include "json.h"
@@ -80,10 +81,8 @@ bool HandleExamplePost (struct mg_connection *nc, struct http_message *hm) {
     
     bool ok = Json::parseFromStream(rbuilder, is, &root, &errs);
     if (ok) {
-      Json::Value::Members propNames = root.getMemberNames();
-      std::string firstProp = propNames[0];
-      for (auto it: propNames) {
-        std::cout << "Property: " << *it.c_str() << " Value: " << root[*it.c_str()].asString() << "\n";
+      for (auto &it: root.getMemberNames()) {
+        std::cout << it  << " : " <<  root[it] << " [" << typeid(root[it]).name() <<"]"<< std::endl;
       }
     } else {
       printf ("Unable to parse the Json object: %s\n",errs.c_str());

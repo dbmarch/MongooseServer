@@ -49,3 +49,26 @@ To build a new product file set:
   npm i
   npm run start
 ```
+
+
+### Additional Information Regarding the libraries:
+
+## JSON2CPP
+
+Github page:
+
+https://github.com/open-source-parsers/jsoncpp
+
+There is a wiki page:
+https://github.com/open-source-parsers/jsoncpp/wiki
+
+And a Doxygen page:
+http://open-source-parsers.github.io/jsoncpp-docs/doxygen/index.html
+
+
+
+
+
+
+
+
