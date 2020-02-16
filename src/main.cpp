@@ -60,19 +60,28 @@ bool JsonHello (struct mg_connection *nc, struct http_message *hm) {
 
 
 //-----------------------------------------------------------------------------
-// Function: Hello test route
+// HandleExamplePost
+// The client is posting a JSON object.  
+// It has the following shape:
+// 
+// {
+//    radioOption: "value1",
+//    checkedOption: [
+//                      0:  "cbvalue1",
+//                      2:  "cbvalue2",
+//                   ],
+//    text:  "SomeText",
+//    dropdownValue: "item4"
+// }
+//
 //-----------------------------------------------------------------------------
 bool HandleExamplePost (struct mg_connection *nc, struct http_message *hm) {
-  printf ("%s\n", __func__);
-
   const struct mg_str *body = hm->query_string.len > 0 ? &hm->query_string : &hm->body;
   std::string msg(body->p, body->len);
-
-  printf ("Rx JSON:  %s\n", msg.c_str());
-
-
   std::istringstream is(msg);
   Json::Value root;
+
+  printf ("%s:  JSON RX: '%s'\n", __func__, msg.c_str());
 
   try {
     Json::CharReaderBuilder rbuilder;
@@ -80,6 +89,10 @@ bool HandleExamplePost (struct mg_connection *nc, struct http_message *hm) {
     std::string errs;
     
     bool ok = Json::parseFromStream(rbuilder, is, &root, &errs);
+
+    // at this point we have parsed the JSON object into root.
+    // We can print it out to be sure:
+
     if (ok) {
       for (auto &it: root.getMemberNames()) {
         std::cout << it  << " : " <<  root[it] << " [" << typeid(root[it]).name() <<"]"<< std::endl;
@@ -93,12 +106,31 @@ bool HandleExamplePost (struct mg_connection *nc, struct http_message *hm) {
     printf ("unknown exception\n");
   }
 
+
+  printf ("Extracting data from the JSON object:\n");
+  std::string textField (root["text"].asString());
+  std::string dropdownField (root["dropdownValue"].asString());
+  std::string radioOptionField (root["radioOption"].asString());
+  std::vector<std::string> checkedOptionField;
+  if (root["checkedOption"].isArray()) {
+    int index{0};
+    for (auto val : root["checkedOption"]) {
+      checkedOptionField.push_back(val.asString());
+      printf ("checkedOption[%d]: %s\n", index++, val.asCString());
+    }
+  }
+   
+  printf ("dropdownValue: %s\n", dropdownField.c_str());
+  printf ("text: %s\n", textField.c_str());
+  printf ("radioOption: %s\n", radioOptionField.c_str());
+
+  // Our data is stored in our variables now.   We could perform standard back end tasks with this data.
+
   mg_send_head(nc, 200,0,
   "Access-Control-Allow-Origin: *\r\n"
   "Access-Control-Allow-Headers: Content-Type\r\n"
   "Content-Type: application/json"
    );
-  // mg_send(nc, json_file.c_str(), json_file.size());
   printf ("Ack POST\n");
   return true;
 }
