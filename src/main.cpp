@@ -1,3 +1,4 @@
+#include <iostream>
 #include <stdio.h>
 #include "MongooseWebServer.h"
 #include "Router.h"
@@ -57,6 +58,81 @@ bool JsonHello (struct mg_connection *nc, struct http_message *hm) {
 }
 
 
+//-----------------------------------------------------------------------------
+// Function: Hello test route
+//-----------------------------------------------------------------------------
+bool HandleExamplePost (struct mg_connection *nc, struct http_message *hm) {
+  printf ("%s\n", __func__);
+
+  const struct mg_str *body = hm->query_string.len > 0 ? &hm->query_string : &hm->body;
+  std::string msg(body->p, body->len);
+
+  printf ("Rx JSON:  %s\n", msg.c_str());
+
+
+  std::istringstream is(msg);
+  Json::Value root;
+
+  try {
+    Json::CharReaderBuilder rbuilder;
+    rbuilder["collectComments"] = false;
+    std::string errs;
+    
+    bool ok = Json::parseFromStream(rbuilder, is, &root, &errs);
+    if (ok) {
+      Json::Value::Members propNames = root.getMemberNames();
+      std::string firstProp = propNames[0];
+      for (auto it: propNames) {
+        std::cout << "Property: " << *it.c_str() << " Value: " << root[*it.c_str()].asString() << "\n";
+      }
+    } else {
+      printf ("Unable to parse the Json object: %s\n",errs.c_str());
+    }
+  } catch(const std::exception &ex) {
+    printf ("Exception %s\n", ex.what() );
+  } catch (...) {
+    printf ("unknown exception\n");
+  }
+
+  mg_send_head(nc, 200,0,
+  "Access-Control-Allow-Origin: *\r\n"
+  "Access-Control-Allow-Headers: Content-Type\r\n"
+  "Content-Type: application/json"
+   );
+  // mg_send(nc, json_file.c_str(), json_file.size());
+  printf ("Ack POST\n");
+  return true;
+}
+
+
+//-----------------------------------------------------------------------------
+// Function: Hello test route
+//-----------------------------------------------------------------------------
+bool HandleExampleGet (struct mg_connection *nc, struct http_message *hm) {
+  Json::Value root;
+  Json::Value data;
+
+  printf ("%s\n", __func__);
+
+  root["message"] = "Hello";
+  data["value"] = 3;
+  data["name"] = "name";
+  root["data"] = data;
+
+  Json::StreamWriterBuilder builder;
+  const std::string json_file = Json::writeString(builder, root);
+  
+  mg_send_head(nc, 200, json_file.size(), 
+  "Access-Control-Allow-Origin: *\r\n"
+  "Access-Control-Allow-Headers: Content-Type\r\n"
+  "Content-Type: application/json"
+   );
+  mg_send(nc, json_file.c_str(), json_file.size());
+  printf ("Sent CORS header\n");
+  return true;
+}
+
+
 
 //-----------------------------------------------------------------------------
 // Function: main
@@ -66,6 +142,9 @@ int main(void) {
   r.AddRoute(new Route (Route::OPTIONS, "*", HandleCors));
   r.AddRoute(new Route (Route::GET, "/hello", Hello));
   r.AddRoute(new Route (Route::GET, "/json", JsonHello));
+  r.AddRoute(new Route (Route::POST, "/example", HandleExamplePost));
+  r.AddRoute(new Route (Route::GET,  "/example",  HandleExampleGet));
+  
   
   MongooseWebServer webServer(r);
   webServer.StartServer();

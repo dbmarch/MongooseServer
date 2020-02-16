@@ -116,7 +116,6 @@ void MongooseWebServer::EventHandler(struct mg_connection *nc, int ev, void *ev_
 
     case MG_EV_WEBSOCKET_CONTROL_FRAME: {
       printf ("%s MG_EV_WEBSOCKET_CONTROL_FRAME\n", __func__);
-
       break;
     }
 
