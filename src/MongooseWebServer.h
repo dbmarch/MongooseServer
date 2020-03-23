@@ -1,6 +1,8 @@
+#include <vector>
 #include "mongoose.h"
-
 #include "Router.h"
+#include "WebSocketHandler.h"
+
 class MongooseWebServer {
 
 public:
@@ -23,14 +25,33 @@ public:
 
   void Broadcast(struct mg_connection *nc, const struct mg_str msg);
 
+  void Send(struct mg_connection *nc, const struct mg_str msg);
+
+  std::string DetailedString (struct mg_connection *nc, std::string text);
+
   struct mg_serve_http_opts s_http_server_opts;
+  
+
+protected:
+
+  void AddWebSocketConnection(struct mg_connection *nc);
+
+  void RemoveWebSocketConnection(struct mg_connection *nc);
+
+  bool ProcessWebSocketPacket (struct mg_connection *nc, struct websocket_message *wm);
+
 
  protected:
+
   const char *s_http_port {"8000"};
 
   struct mg_mgr mgr;
 
   Router &mRouter;
+
+  WebSocketHandler mWsHandler;
+
+  std::vector<struct mg_connection *> mWsConnections;
 
   struct device_settings {
     char setting1[100];
