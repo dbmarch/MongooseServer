@@ -66,48 +66,23 @@ bool MongooseWebServer::ProcessRoute (struct mg_connection *nc, struct http_mess
   }
 
 //-----------------------------------------------------------------------------
-// Function:  MongooseWebServer::AddWebsocketConnection
+// Function:  MongooseWebServer::ProcessTextAction
 //-----------------------------------------------------------------------------
-void MongooseWebServer::AddWebSocketConnection (struct mg_connection *nc) {
-    std::string msg (DetailedString(nc, "++ joined"));
-    printf ("%s %s %p\n", __func__, msg.c_str(), nc);
-    Send (nc, mg_mk_str("++ joined"));
-    // Broadcast(nc, mg_mk_str("++ joined"));
-    mWsConnections.push_back(nc);
-    printf ("%lu connections\n", mWsConnections.size());
-}
-      
-//-----------------------------------------------------------------------------
-// Function:  MongooseWebServer::RemoveWebsocketConnection
-//-----------------------------------------------------------------------------
-void MongooseWebServer::RemoveWebSocketConnection (struct mg_connection *nc) {
-  std::string msg (DetailedString(nc, "-- disconnected"));
-  printf ("%s %s %p\n", __func__, msg.c_str(), nc);
-  Broadcast(nc, mg_mk_str("-- disconnected"));
-  for (auto c = mWsConnections.begin(); c != mWsConnections.end(); c++) {
-    if ( nc == *c ) {
-      printf ("Element Removed\n");
-      mWsConnections.erase(c);
-      break;
-    }
-  }
-  printf ("%lu connections\n", mWsConnections.size());
-}
-      
-    
-//-----------------------------------------------------------------------------
-// Function:  MongooseWebServer::ProcessWebSocketPacket
-//-----------------------------------------------------------------------------
-bool MongooseWebServer::ProcessWebSocketPacket (struct mg_connection *nc, struct websocket_message *wm) {
+bool MongooseWebServer::ProcessTextAction( struct mg_connection * nc,  Json::Value args ) {
   printf ("%s\n", __func__);
-  if(mWsHandler.ProcessPacket(nc, wm)) {
+  SendWebSocketPacket(nc, mg_mk_str("-- WS Text Packet Rx") );
 
-    Send(nc, mg_mk_str("-- WS Packet Rx") );
-    return true;
-  }
-  return false;
+  return true;
+ }
 
-}
+//-----------------------------------------------------------------------------
+// Function:  MongooseWebServer::ProcessGraphAction
+//-----------------------------------------------------------------------------
+bool MongooseWebServer::ProcessGraphAction( struct mg_connection * nc,  Json::Value args ) {
+  printf ("%s\n", __func__);
+  SendWebSocketPacket(nc, mg_mk_str("-- WS Graph Packet Rx") );
+  return true;
+ }
 
 //-----------------------------------------------------------------------------
 // Function:  MongooseWebServer::EventHandler
@@ -208,50 +183,4 @@ void MongooseWebServer::HandleSsiCall(struct mg_connection *nc, const char *para
 //-----------------------------------------------------------------------------
 int MongooseWebServer::IsWebsocket(const struct mg_connection *nc) {
   return nc->flags & MG_F_IS_WEBSOCKET;
-}
-
-//-----------------------------------------------------------------------------
-// Function:  MongooseWebServer::Broadcast
-//-----------------------------------------------------------------------------
-void MongooseWebServer::Broadcast(struct mg_connection *nc, const struct mg_str msg) {
-  struct mg_connection *c;
-  char buf[500];
-  char addr[32];
-  mg_sock_addr_to_str(&nc->sa, addr, sizeof(addr),
-                      MG_SOCK_STRINGIFY_IP | MG_SOCK_STRINGIFY_PORT);
-
-  snprintf(buf, sizeof(buf), "%s %.*s", addr, (int) msg.len, msg.p);
-  printf("%s\n", buf); /* Local echo. */
-  for (c = mg_next(nc->mgr, NULL); c != NULL; c = mg_next(nc->mgr, c)) {
-    if (c == nc) continue; /* Don't send to the sender. */
-    mg_send_websocket_frame(c, WEBSOCKET_OP_TEXT, buf, strlen(buf));
-  }
-}
-
-//-----------------------------------------------------------------------------
-// Function:  MongooseWebServer::Broadcast
-//-----------------------------------------------------------------------------
-void MongooseWebServer::Send(struct mg_connection *nc, const struct mg_str msg) {
-  char buf[500];
-  char addr[32];
-  printf ("Sending a message\n");
-  mg_sock_addr_to_str(&nc->sa, addr, sizeof(addr),
-                      MG_SOCK_STRINGIFY_IP | MG_SOCK_STRINGIFY_PORT);
-
-  snprintf(buf, sizeof(buf), "%s %.*s", addr, (int) msg.len, msg.p);
-  printf("%s %s\n", __func__, buf); /* Local echo. */
-  mg_send_websocket_frame(nc, WEBSOCKET_OP_TEXT, buf, strlen(buf));
-}
-
-
-//-----------------------------------------------------------------------------
-// Function:  MongooseWebServer::DetailedString
-//-----------------------------------------------------------------------------
-std::string MongooseWebServer::DetailedString (struct mg_connection *nc, std::string text) {
-  char addr[32];
-  mg_sock_addr_to_str(&nc->sa, addr, sizeof(addr),
-                      MG_SOCK_STRINGIFY_IP | MG_SOCK_STRINGIFY_PORT);
-  std::string response(addr);
-  response+=text;
-  return response;
 }
