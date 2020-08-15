@@ -1,0 +1,156 @@
+This is a log file
+We should be able to open it in the browser and view it.
+
+
+Just a cut / paste from stack overflow:
+
+
+<input type="file" id="file" ref="fileUploader" style={{display: "none"}}/>
+Change the handleClick function:
+
+handleClick(e) {
+    this.refs.fileUploader.click();
+}
+Since you are using ES6, you will need to bind this to your handleClick function, and we can do that in the constructor:
+
+constructor (props) {
+  super(props);
+  this.handleClick = this.handleClick.bind(this);
+}
+share  improve this answer  follow 
+answered May 27 '16 at 8:55
+
+Abderrahman Brini
+35522 silver badges77 bronze badges
+3
+This is just to open the dialog. – DucCuong Jun 30 '17 at 10:46
+add a comment
+
+27
+
+Other than just put the input on you view, you will need handle the change of input content. To do this implement onChange, and get opened file info, like this:
+
+<input id="myInput"
+   type="file"
+   ref={(ref) => this.upload = ref}
+   style={{display: 'none'}}
+   onChange={this.onChangeFile.bind(this)}
+/>
+
+<RaisedButton
+    label="Open File"
+    primary={false}
+    onClick={()=>{this.upload.click()}}
+/>
+
+
+onChangeFile(event) {
+    event.stopPropagation();
+    event.preventDefault();
+    var file = event.target.files[0];
+    console.log(file);
+    this.setState({file}); /// if you want to upload latter
+}
+Console will output:
+
+File {
+  name: "my-super-excel-file.vcs", 
+  lastModified: 1503267699000, 
+  lastModifiedDate: Sun Aug 20 2017 19:21:39 GMT-0300 (-03), 
+  webkitRelativePath: "", 
+  size: 54170,
+  type:"application/vnd.vcs"
+}
+And now you can work with it like you want. But, if you want to UPLOAD it, you must begin with:
+
+var form = new FormData();
+form.append('file', this.state.file);
+
+YourAjaxLib.doUpload('/yourEndpoint/',form).then(result=> console.log(result));
+share  improve this answer  follow 
+edited May 8 at 11:24
+answered Dec 6 '17 at 9:17
+
+Tiago Gouvêa
+8,20622 gold badges5151 silver badges6363 bronze badges
+add a comment
+
+21
+
+Upload a new answer using React Hooks
+
+First create your Input ref hook
+
+const inputFile = useRef(null) 
+Then set it to your INPUT and add a style to display:none for the input will not show in the screen
+
+<input type='file' id='file' ref={inputFile} style={{display: 'none'}}/>
+Then create your function to handle the open file, the function should be inside the same function you are using the useRef Hook
+
+ const onButtonClick = () => {
+    // `current` points to the mounted file input element
+   inputFile.current.click();
+  };
+Then set the funcion to a Button element
+
+ <button onClick={onButtonClick}>Open file upload window</button>
+API for HTML INPUT FILE
+
+share  improve this answer  follow 
+answered Mar 25 '19 at 3:43
+
+Angel
+
+React 16.3 provides better approach, using React.createRef() method. See https://reactjs.org/blog/2018/03/29/react-v-16-3.html#createref-api
+
+Typescript example:
+
+export class MainMenu extends React.Component<MainMenuProps, {}> {
+
+    private readonly inputOpenFileRef : RefObject<HTMLInputElement>
+
+    constructor() {
+        super({})
+        this.inputOpenFileRef = React.createRef()
+    }
+
+    showOpenFileDlg = () => {
+        this.inputOpenFileRef.current.click()
+    }
+
+    render() {
+        return (
+            <div>
+                <input ref={this.inputOpenFileRef} type="file" style={{ display: "none" }}/>
+                <button onClick={this.showOpenFileDlg}>Open</Button>
+            </div>
+        )
+    }
+}
+share  improve this answer  follow 
+edited Jun 7 at 23:54
+
+user0800
+1,28911 gold badge99 silver badges2222 bronze badges
+answered May 24 '18 at 5:28
+
+leonidv
+1,1651212 silver badges1616 bronze badges
+I wouldn't add in Typescript to an answer as people are going to have problems with RefObject etc... – Tom Stickel Aug 28 '19 at 18:06
+add a comment
+
+1
+
+You can wrap a it in a label, when you click the label it clicks the dialog.
+
+    <div>
+      <label htmlFor="fileUpload">
+        <div>
+          <h3>Open</h3>
+          <p>Other stuff in here</p>
+        </div>
+      </label>
+      <input hidden id="fileUpload" type="file" accept="video/*" />
+    </div>
+share  improve this answer  follow 
+answered Feb 29 at 11:26
