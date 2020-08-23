@@ -163,7 +163,61 @@ bool HandleExampleGet (struct mg_connection *nc, struct http_message *hm) {
   return true;
 }
 
+//-----------------------------------------------------------------------------
+// Function: HandleFileGet
+//-----------------------------------------------------------------------------
+bool HandleFileGet (struct mg_connection *nc, struct http_message *hm) {
 
+  printf ("%s\n", __func__);
+  const char * fileName {"test-data/test.json"};
+  
+  mg_http_serve_file(nc, hm, "test-data/test.json",
+                          mg_mk_str("text/plain"), mg_mk_str(""));
+  printf ("Sent File: '%s'\n", fileName);
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+// Function: HandleFileGetJson
+//-----------------------------------------------------------------------------
+bool HandleFileGetJson (struct mg_connection *nc, struct http_message *hm) {
+
+  printf ("%s\n", __func__);
+  const char * fileName {"test-data/test.json"};
+  
+  mg_http_serve_file(nc, hm, fileName, mg_mk_str("application/json"), mg_mk_str(""));
+  printf ("Sent File: '%s'\n", fileName);
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+// Function: HandleFileGetLogfile
+//-----------------------------------------------------------------------------
+bool HandleFileGetLogfile (struct mg_connection *nc, struct http_message *hm) {
+
+  printf ("%s\n", __func__);
+  const char * fileName {"test-data/logfile.txt"};
+  
+  mg_http_serve_file(nc, hm, fileName, mg_mk_str("text/plain"), mg_mk_str(""));
+
+  printf ("Sent File: '%s'\n", fileName);
+  return true;
+}
+
+
+//-----------------------------------------------------------------------------
+// Function: HandleFileGetGraph
+//-----------------------------------------------------------------------------
+bool HandleFileGetGraph (struct mg_connection *nc, struct http_message *hm) {
+
+  printf ("%s\n", __func__);
+  const char * fileName {"test-data/graph-data.json"};
+  
+  mg_http_serve_file(nc, hm, fileName, mg_mk_str("application/json"), mg_mk_str(""));
+
+  printf ("Sent File: '%s'\n", fileName);
+  return true;
+}
 
 //-----------------------------------------------------------------------------
 // Function: main
@@ -175,7 +229,10 @@ int main(void) {
   r.AddRoute(new Route (Route::GET, "/json", JsonHello));
   r.AddRoute(new Route (Route::POST, "/example", HandleExamplePost));
   r.AddRoute(new Route (Route::GET,  "/example",  HandleExampleGet));
-  
+  r.AddRoute(new Route (Route::GET, "/file/text", HandleFileGet));
+  r.AddRoute(new Route (Route::GET, "/file/json", HandleFileGetJson));
+  r.AddRoute(new Route (Route::GET, "/file/graph", HandleFileGetGraph));
+  r.AddRoute(new Route (Route::GET, "/file/logfile", HandleFileGetLogfile));
   
   MongooseWebServer webServer(r);
   webServer.StartServer();
