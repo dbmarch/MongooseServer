@@ -206,14 +206,28 @@ bool HandleFileGetLogfile (struct mg_connection *nc, struct http_message *hm) {
 
 
 //-----------------------------------------------------------------------------
-// Function: HandleFileGetGraph
+// Function: HandleFileGetGraph1
 //-----------------------------------------------------------------------------
-bool HandleFileGetGraph (struct mg_connection *nc, struct http_message *hm) {
+bool HandleFileGetGraph1 (struct mg_connection *nc, struct http_message *hm) {
 
   printf ("%s\n", __func__);
-  const char * fileName {"test-data/graph-data.json"};
+  const char * fileName {"test-data/graph-data-1.json"};
   
-  mg_http_serve_file(nc, hm, fileName, mg_mk_str("application/json"), mg_mk_str(""));
+  mg_http_serve_file(nc, hm, fileName, mg_mk_str("application/json"), mg_mk_str("Access-Control-Allow-Origin: *\r\nAccess-Control-Allow-Headers: Content-Type\r\n"));
+
+  printf ("Sent File: '%s'\n", fileName);
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+// Function: HandleFileGetGraph1
+//-----------------------------------------------------------------------------
+bool HandleFileGetGraph2 (struct mg_connection *nc, struct http_message *hm) {
+
+  printf ("%s\n", __func__);
+  const char * fileName {"test-data/graph-data-2.json"};
+  
+  mg_http_serve_file(nc, hm, fileName, mg_mk_str("application/json"), mg_mk_str("Access-Control-Allow-Origin: *\r\nAccess-Control-Allow-Headers: Content-Type\r\n"));
 
   printf ("Sent File: '%s'\n", fileName);
   return true;
@@ -231,7 +245,8 @@ int main(void) {
   r.AddRoute(new Route (Route::GET,  "/example",  HandleExampleGet));
   r.AddRoute(new Route (Route::GET, "/file/text", HandleFileGet));
   r.AddRoute(new Route (Route::GET, "/file/json", HandleFileGetJson));
-  r.AddRoute(new Route (Route::GET, "/file/graph", HandleFileGetGraph));
+  r.AddRoute(new Route (Route::GET, "/file/graph/1", HandleFileGetGraph1));
+  r.AddRoute(new Route (Route::GET, "/file/graph/2", HandleFileGetGraph2));
   r.AddRoute(new Route (Route::GET, "/file/logfile", HandleFileGetLogfile));
   
   MongooseWebServer webServer(r);
