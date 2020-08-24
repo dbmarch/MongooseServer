@@ -245,8 +245,8 @@ int main(void) {
   r.AddRoute(new Route (Route::GET,  "/example",  HandleExampleGet));
   r.AddRoute(new Route (Route::GET, "/file/text", HandleFileGet));
   r.AddRoute(new Route (Route::GET, "/file/json", HandleFileGetJson));
-  r.AddRoute(new Route (Route::GET, "/file/graph/1", HandleFileGetGraph1));
-  r.AddRoute(new Route (Route::GET, "/file/graph/2", HandleFileGetGraph2));
+  r.AddRoute(new Route (Route::GET, "/file/graph1", HandleFileGetGraph1));
+  r.AddRoute(new Route (Route::GET, "/file/graph2", HandleFileGetGraph2));
   r.AddRoute(new Route (Route::GET, "/file/logfile", HandleFileGetLogfile));
   
   MongooseWebServer webServer(r);
