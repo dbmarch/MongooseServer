@@ -213,9 +213,7 @@ bool HandleFileGetGraph1 (struct mg_connection *nc, struct http_message *hm) {
   printf ("%s\n", __func__);
   const char * fileName {"test-data/graph-data-1.json"};
   
-  // mg_http_serve_file(nc, hm, fileName, mg_mk_str("application/json"), mg_mk_str(""));
-  mg_http_serve_file(nc, hm, fileName, mg_mk_str("text/plain"), mg_mk_str(""));
-  // mg_send_response_line(nc, 200, "Access-Control-Allow-Origin: ");
+  mg_http_serve_file(nc, hm, fileName, mg_mk_str("application/json"), mg_mk_str("Access-Control-Allow-Origin: *\r\nAccess-Control-Allow-Headers: Content-Type"));
 
   printf ("Sent File: '%s'\n", fileName);
   return true;
@@ -229,9 +227,7 @@ bool HandleFileGetGraph2 (struct mg_connection *nc, struct http_message *hm) {
   printf ("%s\n", __func__);
   const char * fileName {"test-data/graph-data-2.json"};
   
-  // mg_http_serve_file(nc, hm, fileName, mg_mk_str("application/json"), mg_mk_str("Access-Control-Allow-Origin: *\r\nAccess-Control-Allow-Headers: Content-Type\r\n"));
-  mg_http_serve_file(nc, hm, fileName, mg_mk_str("application/json"), mg_mk_str(""));
-  // mg_send_response_line(nc, 200, "Access-Control-Allow-Origin: ");
+  mg_http_serve_file(nc, hm, fileName, mg_mk_str("application/json"), mg_mk_str("Access-Control-Allow-Origin: *\r\nAccess-Control-Allow-Headers: Content-Type"));
   printf ("Sent File: '%s'\n", fileName);
   return true;
 }
