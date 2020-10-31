@@ -223,8 +223,16 @@ bool HandleFileGetGraph1 (struct mg_connection *nc, struct http_message *hm) {
 //-----------------------------------------------------------------------------
 bool HandleFileGetGraph2 (struct mg_connection *nc, struct http_message *hm) {
 
+  
   printf ("%s\n", __func__);
-  const char * fileName {"test-data/graph-data-2.json"};
+  // const char * fileName {"test-data/graph-data-2.json"};
+  const char * fileName {"test-data/data.json"};
+
+  printf ("Running Script\n");
+  if (system ("scripts/CreateGraph.py") == 0) {
+    printf ("Script executed successfully\n");
+  }
+
   
   mg_http_serve_file(nc, hm, fileName, mg_mk_str("application/json"), mg_mk_str("Access-Control-Allow-Origin: *\r\nAccess-Control-Allow-Headers: Content-Type"));
   printf ("Sent File: '%s'\n", fileName);

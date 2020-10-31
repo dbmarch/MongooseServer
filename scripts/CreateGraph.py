@@ -7,8 +7,7 @@ import numpy as np
 print ("Creating a Graph\n")
 
 time = np.arange(0, 100, 0.1)
-amplitude = np.sin(time)
-
+amplitude = np.sin(time) * 100
 
 data = []
 for i in range(len(time)):
@@ -17,7 +16,9 @@ for i in range(len(time)):
 
 jsonData = json.dumps(data)
 
-outFile = open ("../test-data/data.json", "w")
+# this script is executed by our back end code.
+# It will run from the main folder.   The test-data subfolder is below 
+outFile = open ("test-data/data.json", "w")
 outFile.write (jsonData)
 outFile.close()
 
