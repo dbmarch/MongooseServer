@@ -214,7 +214,6 @@ bool HandleFileGetGraph1 (struct mg_connection *nc, struct http_message *hm) {
   const char * fileName {"test-data/graph-data-1.json"};
   
   mg_http_serve_file(nc, hm, fileName, mg_mk_str("application/json"), mg_mk_str("Access-Control-Allow-Origin: *\r\nAccess-Control-Allow-Headers: Content-Type"));
-
   printf ("Sent File: '%s'\n", fileName);
   return true;
 }
