@@ -15,7 +15,6 @@ Services::Services () {
 // Function: Services::AddRoutes
 //-----------------------------------------------------------------------------
 void Services::AddRoutes() {
-  Backend::AddRoutes();
 
   Route helloRoute ("/hello");
   helloRoute.Get(std::bind(&Services::Hello, this, std::placeholders::_1, std::placeholders::_2));
@@ -49,6 +48,8 @@ void Services::AddRoutes() {
   Route fileLogfile ("/file/logfile");
   fileLogfile.Get(std::bind(&Services::HandleFileGetLogfile, this, std::placeholders::_1, std::placeholders::_2));
   AddRoute(std::move(fileLogfile));
+
+  Backend::AddRoutes();
 }
 
 //-----------------------------------------------------------------------------

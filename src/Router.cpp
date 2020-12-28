@@ -80,14 +80,14 @@ bool Router::ProcessRoute (struct mg_connection *nc, struct http_message *hm) {
    if (uri.size())
    {
       mPath = uri;
-      if (mDebug) printf("%s Path '%s'\n", __func__, mPath.c_str());
+      if (mTrace) printf("%s Path '%s'\n", __func__, mPath.c_str());
    }
 
    ParseQueryParams(query);
 
+   if (mTrace) printf ("Check Route %s %s\n", verb.c_str(), mPath.c_str());
    for (auto &route : mRoutes )  
    {
-      if (mDebug) printf ("Check Route %s %s\n", verb.c_str(), mPath.c_str());
       if (route.ProcessRoute(nc, hm, mPath, mRouteParams))
       {
          if (mDebug) printf ("MATCH %s %s\n", verb.c_str(), mPath.c_str());

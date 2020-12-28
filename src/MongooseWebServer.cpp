@@ -112,6 +112,8 @@ void MongooseWebServer::EventHandler(struct mg_connection *nc, int ev, void *ev_
        if (ProcessRoute(nc, hm)) {
          printf ("Route Processed\n");
        } else {
+         std::string uri {hm->uri.p, hm->uri.len};
+         printf ("Serve static content '%s'\n", uri.c_str());
          mg_serve_http(nc, hm, GetServerOptions());  // Serves static content
        } 
     }

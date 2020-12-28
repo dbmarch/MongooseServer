@@ -161,28 +161,29 @@ std::string Route::VerbToString(Route::Verb v) const  {
 //-----------------------------------------------------------------------------
 bool Route::UriMatch(std::string route) {
   std::vector<std::string> routeTokens{ExtractRouteTokens(route)};
-  printf ("%s %s\n", __func__, route.c_str());
+  if (mTrace) printf ("%s %s\n", __func__, route.c_str());
   if (!mRouteTokens.size()) {
-      printf ("Bad route\n");
+     printf ("Bad route\n");
+     return false;
    } else if (!routeTokens.size()) {
      printf ("Bad Uri\n");
      return false;
    } else if (mRoute == std::string("*")) {
-     printf ("Any Route found\n");
+     if (mTrace) printf ("Any Route found\n");
      return true;
    } else if (route == mRoute) {
-     printf ("Exact Route found\n");
+     if (mTrace) printf ("Exact Route found\n");
      return true;
    } else {
      // Look for routeparams, wildcards, etc.
-     printf ("looking for routeParams\n");
+     if (mTrace) printf ("looking for routeParams\n");
      auto incomingRoute = routeTokens.begin();
      for (auto ourRoute : mRouteTokens) {
        if (incomingRoute == routeTokens.end()) {
          printf ("Out of tokens\n");
          return !mExact;   // Return false for exact match
        }
-       printf ("Checking %s %s\n", ourRoute.c_str(), (*incomingRoute).c_str() );
+       if (mTrace) printf ("Checking %s %s\n", ourRoute.c_str(), (*incomingRoute).c_str() );
        if (ourRoute != *incomingRoute) {
          try {
            if (ourRoute.at(0) == ':') {

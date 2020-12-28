@@ -52,9 +52,11 @@ protected:
 
   struct mg_mgr mMgMgr;
 
+  // Our router
   Router &mRouter;
 
-  std::thread mServerThread;
+  // Server Thread
+  std::thread mServerThread;  
 
   bool mServerRunning {false};
 };
