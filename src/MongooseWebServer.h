@@ -25,14 +25,16 @@ public:
   virtual void StartServer();
   virtual void StopServer();
 
-  std::string GetServerPort() const {return std::string(mHttpPort);}
-
+  std::string GetServerPort() const;
+  
+  
+  // Checks if we have the route.  If so, handle it.
   bool ProcessRoute (struct mg_connection *nc, struct mg_http_message *hm);
 
-  // mg_serve_http_opts GetServerOptions() { return mHttpServerOpts;}
+  // Checks if we have the static content.
+  bool HaveStaticContent(const std::string &uri) const;
 
-  // void HandleSsiCall(struct mg_connection *nc, const char *param);
-
+  // Returns true if this is a web socket.
   int IsWebsocket(const struct mg_connection *nc);
 
   // Inherit from WebSocketHandler
@@ -45,17 +47,14 @@ protected:
   bool mDebug{true};
 
 // struct mg_serve_http_opts mHttpServerOpts;
-
-  std::string mWebRootDir{"client/build"};
-  std::string mServerUrl{"http://localhost:8000"};
-  const char *mHttpPort {"8000"};
-  unsigned short  mPollingInterval{100};   // Every 100msec
-
-
-  struct mg_mgr mMgMgr;
-
   // Our router
   Router &mRouter;
+  std::string mWebRootDir{"client/build"};
+  std::string mServerUrl{"http://localhost:8000"};
+  
+  unsigned short  mPollingInterval{100};   // Every 100msec
+
+  struct mg_mgr mMgMgr;
 
   // Server Thread
   std::thread mServerThread;  

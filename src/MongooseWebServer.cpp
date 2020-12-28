@@ -2,8 +2,8 @@
 #include <signal.h>
 #include <exception>
 #include <execinfo.h>
+#include <sys/stat.h>
 
-#include <cstring>
 #include "MongooseWebServer.h"
 #include "Route.h"
 
@@ -36,21 +36,12 @@ MongooseWebServer::~MongooseWebServer()
 //-----------------------------------------------------------------------------
 void MongooseWebServer::StartServer() 
 {
-  struct mg_connection *nc;
-  // cs_stat_t st;
-
   mg_mgr_init(&mMgMgr);   // This data is available nc->mgr->user_data
 
-  nc = mg_http_listen (&mMgMgr, mServerUrl.c_str(), StaticEventHandler, this);
-
-  
-  // mg_set_protocol_http_websocket(nc);
-  // if (mg_stat(mHttpServerOpts.document_root, &st) != 0) {
-  //     fprintf(stderr, "%s", "Cannot find web_root directory, exiting\n");
-  //     exit(1);
-  //   }
+  mg_http_listen (&mMgMgr, mServerUrl.c_str(), StaticEventHandler, this);
 
   if (mDebug) printf ("Starting Server on %s\n", mServerUrl.c_str());
+  
   mServerThread = std::thread(&MongooseWebServer::MongooseEventLoop, this);
 }
 
@@ -126,13 +117,16 @@ void MongooseWebServer::EventHandler(struct mg_connection *nc, int ev, void *ev_
   switch (ev) {
     case MG_EV_HTTP_MSG: 
     {
-       printf ("%s MG_EV_HTTP_REQUEST\n", __func__);
-       if (ProcessRoute(nc, hm)) {
+       std::string uri {hm->uri.ptr, hm->uri.len};
+       if (mTrace) printf ("%s MG_EV_HTTP_REQUEST\n", __func__);
+       if (HaveStaticContent(uri)) {
+         printf ("Static Content Served '%s'\n", uri.c_str() );
+         mg_http_serve_dir(nc, hm, mWebRootDir.c_str());
+       } else if (ProcessRoute(nc, hm)) {
          printf ("Route Processed\n");
        } else {
-         std::string uri {hm->uri.ptr, hm->uri.len};
-         printf ("Serve static content '%s'\n", uri.c_str());
-         mg_http_serve_dir(nc, hm, mWebRootDir.c_str());
+         printf ("redirect '/'\n");
+         mg_http_reply(nc, 308, "Location: /index.html\r\n", "");
        } 
     }
       break;
@@ -158,6 +152,12 @@ void MongooseWebServer::EventHandler(struct mg_connection *nc, int ev, void *ev_
         RemoveWebSocketConnection(nc);
       }
       break;
+
+    case MG_EV_WRITE:
+      break;
+
+    case MG_EV_READ:
+      break;
     
     case MG_EV_POLL:
       break;
@@ -180,8 +180,9 @@ void MongooseWebServer::EventHandler(struct mg_connection *nc, int ev, void *ev_
       printf ("%s MG_EV_MQTT_OPEN\n", __func__);
       break; 
 
-
-
+    case MG_EV_SNTP_TIME:
+      printf ("%s MG_EV_SNTP_TIME\n", __func__);
+      break;
 
     default:
       printf ("%s UKNOWN %d\n", __func__, ev);
@@ -222,8 +223,6 @@ void *MongooseWebServer::MongooseEventLoop()
   return nullptr;
 }
 
-
-
 //-----------------------------------------------------------------------------
 // Function:  MongooseWebServer::IsWebsocket
 //-----------------------------------------------------------------------------
@@ -231,4 +230,18 @@ int MongooseWebServer::IsWebsocket(const struct mg_connection *nc) {
   return nc->is_websocket;
 }
 
+//-----------------------------------------------------------------------------
+// Function:  MongooseWebServer::GetServerPort
+//-----------------------------------------------------------------------------
+std::string MongooseWebServer::GetServerPort() const {
+  return mServerUrl; // This is not correct but ok for now.
+}
 
+//-----------------------------------------------------------------------------
+// Function:  MongooseWebServer::HaveStaticContent
+//-----------------------------------------------------------------------------
+bool MongooseWebServer::HaveStaticContent(const std::string &uri) const {
+  struct stat st;
+  const std::string fileName{mWebRootDir + uri};
+  return stat(fileName.c_str(), &st) == 0;
+}

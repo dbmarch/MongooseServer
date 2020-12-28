@@ -32,7 +32,7 @@ void Backend::AddRoutes()
 bool Backend::HandleCors (struct mg_connection *nc, struct mg_http_message *hm)
 {
   mg_http_reply(nc, 200, "Access-Control-Allow-Methods: POST, GET, OPTIONS\r\n"
-   "Access-Control-Allow-Origin: *\r\nAccess-Control-Allow-Headers: Content-Type", "");
+   "Access-Control-Allow-Origin: *\r\nAccess-Control-Allow-Headers: Content-Type\r\n", "");
    return true;
 }
 
@@ -87,7 +87,7 @@ void Backend::ServeFile (struct mg_connection *nc, struct mg_http_message *hm, s
 // Function: Backend::SendReply()
 //-----------------------------------------------------------------------------
 void Backend::SendReply (struct mg_connection *nc, int httpCode) {
-  mg_http_reply(nc, httpCode, DEFAULT_HEADERS, "");
+  mg_http_reply(nc, httpCode, TEXT_HEADERS, "");
 }
 
 
@@ -95,7 +95,7 @@ void Backend::SendReply (struct mg_connection *nc, int httpCode) {
 // Function: Backend::SendReply()
 //-----------------------------------------------------------------------------
 void Backend::SendReply (struct mg_connection *nc, int httpCode, std::string content ) {
-  mg_http_reply(nc, httpCode, DEFAULT_HEADERS, content.c_str());
+  mg_http_reply(nc, httpCode, TEXT_HEADERS, content.c_str());
 }
 
 //-----------------------------------------------------------------------------
@@ -104,14 +104,14 @@ void Backend::SendReply (struct mg_connection *nc, int httpCode, std::string con
 void Backend::SendReply (struct mg_connection *nc, int httpCode, Json::Value &root  ) {
   Json::StreamWriterBuilder builder;
   const std::string json_file = Json::writeString(builder, root);
-  mg_http_reply(nc, httpCode, DEFAULT_HEADERS, json_file.c_str());
+  mg_http_reply(nc, httpCode, JSON_HEADERS, json_file.c_str());
 }
 
 //-----------------------------------------------------------------------------
 // Function: Backend::SendError()
 //-----------------------------------------------------------------------------
 void Backend::SendError (struct mg_connection *nc, int httpCode, std::string reason ) {
-  mg_http_reply(nc, httpCode, DEFAULT_HEADERS, reason.c_str());
+  mg_http_reply(nc, httpCode, TEXT_HEADERS, reason.c_str());
 }
 
 
