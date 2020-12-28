@@ -40,8 +40,6 @@ void MongooseWebServer::StartServer()
 
   mg_http_listen (&mMgMgr, mServerUrl.c_str(), StaticEventHandler, this);
 
-  // mg_http_listen (&mMgMgr, "ws://localhost:8000", StaticEventHandler, this);
-
   if (mDebug) printf ("Starting Server on %s\n", mServerUrl.c_str());
   
   mServerThread = std::thread(&MongooseWebServer::MongooseEventLoop, this);
@@ -214,18 +212,6 @@ void MongooseWebServer::EventHandler(struct mg_connection *nc, int ev, void *ev_
       break;
   }
 }
-
-//-----------------------------------------------------------------------------
-// Function:  MongooseWebServer::HandleSsiCall
-//-----------------------------------------------------------------------------
-// void MongooseWebServer::HandleSsiCall(struct mg_connection *nc, const char *param){
-//   if (strcmp(param, "setting1") == 0) {
-//     mg_printf_html_escape(nc, "%s", s_settings.setting1);
-//   } else if (strcmp(param, "setting2") == 0) {
-//     mg_printf_html_escape(nc, "%s", s_settings.setting2);
-//   }
-// }
-
 
 //-----------------------------------------------------------------------------
 // Function:  MongooseWebServer::MongooseEventLoop
