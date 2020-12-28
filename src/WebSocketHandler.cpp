@@ -169,13 +169,11 @@ bool SendWebSocketPacket (struct mg_connection * nc, const std::string text ){
 bool WebSocketHandler::SendWebSocketPacket(struct mg_connection *nc, const char* msg) {
 if (nc) {
     char buf[500];
-    
-    printf ("Sending a message\n");
 
     std::string peerAddr(mg_ntoa(&nc->peer, buf, sizeof(buf)));
-    std::string msg = peerAddr + std::string (msg);
-    printf("%s %s\n", __func__, msg.c_str()); /* Local echo. */
-    mg_ws_send (nc, msg.c_str(), msg.length(), WEBSOCKET_OP_TEXT);    
+    std::string msgToSend = peerAddr + std::string (msg);
+    printf("%s '%s'\n", __func__, msgToSend.c_str()); /* Local echo. */
+    mg_ws_send (nc, msgToSend.c_str(), msgToSend.length(), WEBSOCKET_OP_TEXT);    
     return true;
   }
  return false;
@@ -192,12 +190,10 @@ bool WebSocketHandler::BroadcastWebSocketPacket(struct mg_connection *nc, const 
     char buf[500];
 
     std::string peerAddr(mg_ntoa(&nc->peer, buf, sizeof(buf)));
-
-    snprintf(buf, sizeof(buf), "%s %.*s", peerAddr.c_str(), (int) msg.len, msg.ptr);
-    printf("%s\n", buf); /* Local echo. */
+    std::string msgToSend = peerAddr + std::string (msg.ptr, msg.len);
     for (c = nc->mgr->conns; c != nullptr; c = c->next) {
       if (c == nc) continue; /* Don't send to the sender. */
-      SendWebSocketPacket(c, buf);
+      SendWebSocketPacket(c, msgToSend);
     }
     return true;
   }

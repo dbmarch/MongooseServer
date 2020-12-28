@@ -40,6 +40,8 @@ void MongooseWebServer::StartServer()
 
   mg_http_listen (&mMgMgr, mServerUrl.c_str(), StaticEventHandler, this);
 
+  // mg_http_listen (&mMgMgr, "ws://localhost:8000", StaticEventHandler, this);
+
   if (mDebug) printf ("Starting Server on %s\n", mServerUrl.c_str());
   
   mServerThread = std::thread(&MongooseWebServer::MongooseEventLoop, this);
@@ -113,34 +115,49 @@ void MongooseWebServer::EventHandler(struct mg_connection *nc, int ev, void *ev_
   struct mg_http_message *hm = (struct mg_http_message *) ev_data;
   struct mg_ws_message *wm = (struct mg_ws_message *) ev_data;
   const char* text = (const char*) ev_data;
+  char buf[500];
+  std::string peer (mg_ntoa(&nc->peer, buf, sizeof(buf)));
+  
 
   switch (ev) {
-    case MG_EV_HTTP_MSG: 
-    {
+    case MG_EV_HTTP_MSG: {
        std::string uri {hm->uri.ptr, hm->uri.len};
-       if (mTrace) printf ("%s MG_EV_HTTP_REQUEST\n", __func__);
+       if (mDebug) printf ("MG_EV_HTTP_MSG isAccepted:%d isWebSocket:%d peer:%s\n", 
+          nc->is_accepted, nc->is_websocket, peer.c_str());
        if (HaveStaticContent(uri)) {
          printf ("Static Content Served '%s'\n", uri.c_str() );
          mg_http_serve_dir(nc, hm, mWebRootDir.c_str());
+       } else if (mg_http_match_uri(hm, "/ws")) {
+         printf ("%s MG_EV_HTTP_MSG: Web Socket\n", __func__);
+         mg_ws_upgrade(nc, hm);
+         AddWebSocketConnection(nc);
+       } else if (mg_http_match_uri(hm, "/wss")) {
+         printf ("%s MG_EV_HTTP_MSG: Secure Web Socket\n", __func__);
+         mg_ws_upgrade(nc, hm);
+         AddWebSocketConnection(nc);          
        } else if (ProcessRoute(nc, hm)) {
          printf ("Route Processed\n");
        } else {
-         printf ("redirect '/'\n");
+         printf ("Redirect %s to '/'\n", uri.c_str());
          mg_http_reply(nc, 308, "Location: /index.html\r\n", "");
-       } 
+       }
+       break;
     }
+
+    case MG_EV_WS_CTL: 
+      printf ("MG_EV_WS_CTL\n");
       break;
 
     case MG_EV_WS_OPEN: 
-       printf ("%s MG_EV_WS_OPEN (HANDHAKE COMPLETE\n", __func__);
-       AddWebSocketConnection(nc);
-       break;
+      printf ("%s MG_EV_WS_OPEN (HANDHAKE COMPLETE\n", __func__);
+      AddWebSocketConnection(nc);
+      break;
 
     case  MG_EV_WS_MSG: {
-       printf ("%s MG_EV_WS_MSG\n", __func__);
-       ProcessWebSocketPacket(nc, wm);
-       break;
-     }
+      printf ("%s MG_EV_WS_MSG\n", __func__);
+      ProcessWebSocketPacket(nc, wm);
+      break;
+    }
 
     case MG_EV_ERROR: 
       printf ("%s MG_EV_ERROR '%s'\n", __func__, text);
@@ -162,11 +179,19 @@ void MongooseWebServer::EventHandler(struct mg_connection *nc, int ev, void *ev_
     case MG_EV_POLL:
       break;
 
-    case MG_EV_ACCEPT:
-      if (mg_url_is_ssl (mWebRootDir.c_str()))
-      printf ("%s MG_EV_ACCEPT\n", __func__);
+    case MG_EV_CONNECT:
+      printf ("MG_EV_CONNECT\n");
       break;
 
+    case MG_EV_ACCEPT: {
+      if (mg_url_is_ssl (mWebRootDir.c_str())) {
+        printf ("MG_EV_ACCEPT SSL\n");
+      } else {
+          printf ("MG_EV_ACCEPT isAccepted:%d isWebSocket:%d peer:%s uri: %s\n", 
+          nc->is_accepted, nc->is_websocket, peer.c_str());
+      }
+      break;
+    }
 
     case MG_EV_RESOLVE:
       printf ("%s MG_EV_RESOLVE  'Host Name Resolved\n", __func__);
