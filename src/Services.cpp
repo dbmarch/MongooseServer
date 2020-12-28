@@ -55,7 +55,7 @@ void Services::AddRoutes() {
 //-----------------------------------------------------------------------------
 // Function: Services::Hello
 //-----------------------------------------------------------------------------
-bool Services::Hello (struct mg_connection *nc, struct http_message *hm) {
+bool Services::Hello (struct mg_connection *nc, struct mg_http_message *hm) {
   printf ("HELLO ROUTE\n");
   std::string hello("Hello");
   SendReply (nc, 200, hello);
@@ -65,7 +65,7 @@ bool Services::Hello (struct mg_connection *nc, struct http_message *hm) {
 //-----------------------------------------------------------------------------
 // Function: Services::JsonHello
 //-----------------------------------------------------------------------------
-bool Services::JsonHello (struct mg_connection *nc, struct http_message *hm) {
+bool Services::JsonHello (struct mg_connection *nc, struct mg_http_message *hm) {
   Json::Value root;
   Json::Value data;
 
@@ -76,16 +76,7 @@ bool Services::JsonHello (struct mg_connection *nc, struct http_message *hm) {
   data["name"] = "name";
   root["data"] = data;
 
-  Json::StreamWriterBuilder builder;
-  const std::string json_file = Json::writeString(builder, root);
-  SendReply(nc, 200, json_file);
-  // mg_send_head(nc, 200, json_file.size(), 
-  // "Access-Control-Allow-Origin: *\r\n"
-  // "Access-Control-Allow-Headers: Content-Type\r\n"
-  // "Content-Type: application/json"
-  //  );
-  // mg_send(nc, json_file.c_str(), json_file.size());
-  // printf ("Sent CORS header\n");
+  SendReply(nc, 200, root);
   return true;
 }
 
@@ -106,38 +97,21 @@ bool Services::JsonHello (struct mg_connection *nc, struct http_message *hm) {
 // }
 //
 //-----------------------------------------------------------------------------
-bool Services::HandleExamplePost (struct mg_connection *nc, struct http_message *hm) {
-  const struct mg_str *body = hm->query_string.len > 0 ? &hm->query_string : &hm->body;
-  std::string msg(body->p, body->len);
-  std::istringstream is(msg);
+bool Services::HandleExamplePost (struct mg_connection *nc, struct mg_http_message *hm) {
+  // const struct mg_str *body = hm->query_string.len > 0 ? &hm->query_string : &hm->body;
+  // std::string msg(body->p, body->len);
+  // struct mg_str &body = hm->body;
+  // std::string msg(body.ptr, body.len);
+
+  // std::istringstream is(msg);
   Json::Value root;
 
-  printf ("%s:  JSON RX: '%s'\n", __func__, msg.c_str());
+  printf ("%s\n", __func__);
 
-  try {
-    Json::CharReaderBuilder rbuilder;
-    rbuilder["collectComments"] = false;
-    std::string errs;
-    
-    bool ok = Json::parseFromStream(rbuilder, is, &root, &errs);
-
-    // at this point we have parsed the JSON object into root.
-    // We can print it out to be sure:
-
-    if (ok) {
-      for (auto &it: root.getMemberNames()) {
-        std::cout << it  << " : " <<  root[it] << " [" << typeid(root[it]).name() <<"]"<< std::endl;
-      }
-    } else {
-      printf ("Unable to parse the Json object: %s\n",errs.c_str());
-    }
-  } catch(const std::exception &ex) {
-    printf ("Exception %s\n", ex.what() );
-  } catch (...) {
-    printf ("unknown exception\n");
+  if (!ExtractJsonFromBody(root, nc, hm)) {
+    SendError(nc, 403, "Invalid Request");
   }
-
-
+    
   printf ("Extracting data from the JSON object:\n");
   std::string textField (root["text"].asString());
   std::string dropdownField (root["dropdownValue"].asString());
@@ -158,11 +132,6 @@ bool Services::HandleExamplePost (struct mg_connection *nc, struct http_message 
   // Our data is stored in our variables now.   We could perform standard back end tasks with this data.
 
   SendReply(nc, 200);
-  // mg_send_head(nc, 200,0,
-  // "Access-Control-Allow-Origin: *\r\n"
-  // "Access-Control-Allow-Headers: Content-Type\r\n"
-  // "Content-Type: application/json"
-  //  );
   printf ("Ack POST\n");
   return true;
 }
@@ -171,7 +140,7 @@ bool Services::HandleExamplePost (struct mg_connection *nc, struct http_message 
 //-----------------------------------------------------------------------------
 // Function: Hello test route
 //-----------------------------------------------------------------------------
-bool Services::HandleExampleGet (struct mg_connection *nc, struct http_message *hm) {
+bool Services::HandleExampleGet (struct mg_connection *nc, struct mg_http_message *hm) {
   Json::Value root;
   Json::Value data;
 
@@ -182,58 +151,51 @@ bool Services::HandleExampleGet (struct mg_connection *nc, struct http_message *
   data["name"] = "name";
   root["data"] = data;
 
-  Json::StreamWriterBuilder builder;
-  const std::string json_file = Json::writeString(builder, root);
-  
-  SendReply(nc, 200, json_file);
-  // mg_send_head(nc, 200, json_file.size(), 
-  // "Access-Control-Allow-Origin: *\r\n"
-  // "Access-Control-Allow-Headers: Content-Type\r\n"
-  // "Content-Type: application/json"
-  //  );
-  // mg_send(nc, json_file.c_str(), json_file.size());
-  // printf ("Sent CORS header\n");
+  SendReply(nc, 200, root);
   return true;
 }
 
 //-----------------------------------------------------------------------------
 // Function: HandleFileGet
 //-----------------------------------------------------------------------------
-bool Services::HandleFileGet (struct mg_connection *nc, struct http_message *hm) {
+bool Services::HandleFileGet (struct mg_connection *nc, struct mg_http_message *hm) {
 
   printf ("%s\n", __func__);
-  const char * fileName {"test-data/test.json"};
+  std::string fileName {"test-data/test.json"};
   
-  mg_http_serve_file(nc, hm, "test-data/test.json",
-                          mg_mk_str("text/plain"), mg_mk_str(""));
-  printf ("Sent File: '%s'\n", fileName);
+  // mg_http_serve_file(nc, hm, "test-data/test.json",
+  //                           mg_mk_str("text/plain"), mg_mk_str(""));
+  
+  ServeFile (nc, hm, fileName, "application/json");                          
+  printf ("Sent File: '%s'\n", fileName.c_str());
   return true;
 }
 
 //-----------------------------------------------------------------------------
 // Function: HandleFileGetJson
 //-----------------------------------------------------------------------------
-bool Services::HandleFileGetJson (struct mg_connection *nc, struct http_message *hm) {
+bool Services::HandleFileGetJson (struct mg_connection *nc, struct mg_http_message *hm) {
 
   printf ("%s\n", __func__);
-  const char * fileName {"test-data/test.json"};
+  std::string fileName {"test-data/test.json"};
   
-  mg_http_serve_file(nc, hm, fileName, mg_mk_str("application/json"), mg_mk_str(""));
-  printf ("Sent File: '%s'\n", fileName);
+  // mg_http_serve_file(nc, hm, fileName, mg_mk_str("application/json"), mg_mk_str(""));
+  ServeFile (nc, hm, fileName, "application/json");
+  printf ("Sent File: '%s'\n", fileName.c_str());
   return true;
 }
 
 //-----------------------------------------------------------------------------
 // Function: HandleFileGetLogfile
 //-----------------------------------------------------------------------------
-bool Services::HandleFileGetLogfile (struct mg_connection *nc, struct http_message *hm) {
+bool Services::HandleFileGetLogfile (struct mg_connection *nc, struct mg_http_message *hm) {
 
   printf ("%s\n", __func__);
-  const char * fileName {"test-data/logfile.txt"};
+  std::string fileName {"test-data/logfile.txt"};
   
-  mg_http_serve_file(nc, hm, fileName, mg_mk_str("text/plain"), mg_mk_str(""));
+  ServeFile (nc, hm, fileName, "text/plain");
 
-  printf ("Sent File: '%s'\n", fileName);
+  printf ("Sent File: '%s'\n", fileName.c_str());
   return true;
 }
 
@@ -241,33 +203,31 @@ bool Services::HandleFileGetLogfile (struct mg_connection *nc, struct http_messa
 //-----------------------------------------------------------------------------
 // Function: HandleFileGetGraph1
 //-----------------------------------------------------------------------------
-bool Services::HandleFileGetGraph1 (struct mg_connection *nc, struct http_message *hm) {
+bool Services::HandleFileGetGraph1 (struct mg_connection *nc, struct mg_http_message *hm) {
 
   printf ("%s\n", __func__);
-  const char * fileName {"test-data/graph-data-1.json"};
+  std::string fileName {"test-data/graph-data-1.json"};
   
-  mg_http_serve_file(nc, hm, fileName, mg_mk_str("application/json"), mg_mk_str("Access-Control-Allow-Origin: *\r\nAccess-Control-Allow-Headers: Content-Type"));
-  printf ("Sent File: '%s'\n", fileName);
+  ServeFile(nc, hm, fileName, "application/json");
+
+  printf ("Sent File: '%s'\n", fileName.c_str());
   return true;
 }
 
 //-----------------------------------------------------------------------------
 // Function: HandleFileGetGraph1
 //-----------------------------------------------------------------------------
-bool Services::HandleFileGetGraph2 (struct mg_connection *nc, struct http_message *hm) {
-
-  
+bool Services::HandleFileGetGraph2 (struct mg_connection *nc, struct mg_http_message *hm) {
   printf ("%s\n", __func__);
-  // const char * fileName {"test-data/graph-data-2.json"};
-  const char * fileName {"test-data/data.json"};
+  std::string fileName {"test-data/data.json"};
 
   printf ("Running Script\n");
   if (system ("scripts/CreateGraph.py") == 0) {
     printf ("Script executed successfully\n");
   }
-
   
-  mg_http_serve_file(nc, hm, fileName, mg_mk_str("application/json"), mg_mk_str("Access-Control-Allow-Origin: *\r\nAccess-Control-Allow-Headers: Content-Type"));
-  printf ("Sent File: '%s'\n", fileName);
+  ServeFile(nc, hm, fileName, "application/json");
+
+  printf ("Sent File: '%s'\n", fileName.c_str());
   return true;
 }

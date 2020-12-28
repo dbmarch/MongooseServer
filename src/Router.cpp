@@ -67,11 +67,11 @@ void Router::ClearRoutes () {
 //-----------------------------------------------------------------------------
 // Function: Router::ProcessRoute
 //-----------------------------------------------------------------------------
-bool Router::ProcessRoute (struct mg_connection *nc, struct http_message *hm) {
+bool Router::ProcessRoute (struct mg_connection *nc, struct mg_http_message *hm) {
    bool rval{false};
-   std::string verb {hm->method.p, hm->method.len};
-   std::string uri {hm->uri.p, hm->uri.len};
-   std::string query {hm->query_string.p, hm->query_string.len};
+   std::string verb {hm->method.ptr, hm->method.len};
+   std::string uri {hm->uri.ptr, hm->uri.len};
+   std::string query {hm->query.ptr, hm->query.len};
    if (uri == "/")
    {
       return false;  // Static content served by mongoose ( mongoose has a bug with regard to these URI's)

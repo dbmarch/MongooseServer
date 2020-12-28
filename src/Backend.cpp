@@ -29,10 +29,10 @@ void Backend::AddRoutes()
 //-----------------------------------------------------------------------------
 // Function: Backend::HandleCors()
 //-----------------------------------------------------------------------------
-bool Backend::HandleCors (struct mg_connection *nc, struct http_message *hm)
+bool Backend::HandleCors (struct mg_connection *nc, struct mg_http_message *hm)
 {
-   mg_send_head(nc, 200, 0, "Access-Control-Allow-Methods: POST, GET, OPTIONS\r\n"
-   "Access-Control-Allow-Origin: *\r\nAccess-Control-Allow-Headers: Content-Type");
+  mg_http_reply(nc, 200, "Access-Control-Allow-Methods: POST, GET, OPTIONS\r\n"
+   "Access-Control-Allow-Origin: *\r\nAccess-Control-Allow-Headers: Content-Type\r\n", "");
    return true;
 }
 
@@ -40,9 +40,9 @@ bool Backend::HandleCors (struct mg_connection *nc, struct http_message *hm)
 //-----------------------------------------------------------------------------
 // Function: Backend::ExtractJsonFromBody()
 //-----------------------------------------------------------------------------
-bool Backend::ExtractJsonFromBody(Json::Value & root, struct mg_connection *nc, struct http_message *hm) {
-  const struct mg_str *body = hm->query_string.len > 0 ? &hm->query_string : &hm->body;
-  std::string msg(body->p, body->len);
+bool Backend::ExtractJsonFromBody(Json::Value & root, struct mg_connection *nc, struct mg_http_message *hm) {
+  struct mg_str &body = hm->body;
+  std::string msg(body.ptr, body.len);
   std::istringstream is(msg);
   bool valid{false};
 
@@ -75,13 +75,19 @@ bool Backend::ExtractJsonFromBody(Json::Value & root, struct mg_connection *nc, 
 }
 
 
+//-----------------------------------------------------------------------------
+// Function: Backend::SendReply()
+//-----------------------------------------------------------------------------
+void Backend::ServeFile (struct mg_connection *nc, struct mg_http_message *hm, std::string fileName, std::string mimeType) {
+  mg_http_serve_file (nc, hm, fileName.c_str(), mimeType.c_str());
+}
+
 
 //-----------------------------------------------------------------------------
 // Function: Backend::SendReply()
 //-----------------------------------------------------------------------------
 void Backend::SendReply (struct mg_connection *nc, int httpCode) {
-  mg_send_head(nc, httpCode, 0, DEFAULT_HEADERS);
-  nc->flags |= MG_F_SEND_AND_CLOSE;
+  mg_http_reply(nc, httpCode, TEXT_HEADERS, "");
 }
 
 
@@ -89,15 +95,23 @@ void Backend::SendReply (struct mg_connection *nc, int httpCode) {
 // Function: Backend::SendReply()
 //-----------------------------------------------------------------------------
 void Backend::SendReply (struct mg_connection *nc, int httpCode, std::string content ) {
-  mg_send_head(nc, httpCode, content.size(), DEFAULT_HEADERS);
-  mg_send(nc, content.c_str(), content.size());
+  mg_http_reply(nc, httpCode, TEXT_HEADERS, content.c_str());
+}
+
+//-----------------------------------------------------------------------------
+// Function: Backend::SendReply()
+//-----------------------------------------------------------------------------
+void Backend::SendReply (struct mg_connection *nc, int httpCode, Json::Value &root  ) {
+  Json::StreamWriterBuilder builder;
+  const std::string json_file = Json::writeString(builder, root);
+  mg_http_reply(nc, httpCode, JSON_HEADERS, json_file.c_str());
 }
 
 //-----------------------------------------------------------------------------
 // Function: Backend::SendError()
 //-----------------------------------------------------------------------------
-void Backend::SendError (struct mg_connection *nc, int httpCode, const char* reason ) {
-  mg_http_send_error(nc, httpCode, reason);
+void Backend::SendError (struct mg_connection *nc, int httpCode, std::string reason ) {
+  mg_http_reply(nc, httpCode, TEXT_HEADERS, reason.c_str());
 }
 
 

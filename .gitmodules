@@ -1,9 +1,9 @@
 [submodule "jsoncpp"]
 	path = jsoncpp
-	url = git@github.com:dbmarch/jsoncpp.git
+	url = ../jsoncpp.git
 [submodule "mongoose"]
 	path = mongoose
-	url = git@github.com:dbmarch/mongoose.git
+	url = ../mongoose.git
 [submodule "client"]
 	path = client
-	url = git@github.com:dbmarch/MongooseReactClient.git
+	url = ../MongooseReactClient.git

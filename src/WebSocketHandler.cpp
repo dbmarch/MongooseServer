@@ -30,15 +30,15 @@ WebSocketHandler::~WebSocketHandler() {
 // Stringified and sent via the websocket.
 // actions are assumed well known.
 //-----------------------------------------------------------------------------
-bool WebSocketHandler::ProcessWebSocketPacket (struct mg_connection *nc,   struct websocket_message *wm ) {
+bool WebSocketHandler::ProcessWebSocketPacket (struct mg_connection *nc,   struct mg_ws_message *wm ) {
   bool handled{false};
-  struct mg_str d = {(char *) wm->data, wm->size};
+  struct mg_str d{wm->data};
   // Assume a JSON object:
 
   // std::string s(d.p, d.len);
   // printf ("RCV: %s\n", s.c_str());
 
-  std::string msg(d.p,d.len);
+  std::string msg(d.ptr,d.len);
   std::istringstream is(msg);
   Json::Value root;
 
@@ -89,7 +89,7 @@ bool WebSocketHandler::ProcessWebSocketPacket (struct mg_connection *nc,   struc
 void WebSocketHandler::AddWebSocketConnection (struct mg_connection *nc) {
     std::string msg (TaggedString(nc, "++ joined"));
     printf ("%s %s %p\n", __func__, msg.c_str(), nc);
-    SendWebSocketPacket (nc, mg_mk_str("++ joined"));
+    SendWebSocketPacket (nc,"++ joined");
     
     mWsConnections[nc] = WS_ACTION_NONE;
     
@@ -116,10 +116,8 @@ void WebSocketHandler::RemoveWebSocketConnection (struct mg_connection *nc) {
 // Function:  WebSocketHandler::TaggedString
 //-----------------------------------------------------------------------------
 std::string WebSocketHandler::TaggedString (struct mg_connection *nc, std::string text) {
-  char addr[32];
-  mg_sock_addr_to_str(&nc->sa, addr, sizeof(addr),
-                      MG_SOCK_STRINGIFY_IP | MG_SOCK_STRINGIFY_PORT);
-  std::string response(addr);
+  char buf[500];
+  std::string response (mg_ntoa(&nc->peer, buf, sizeof(buf)));
   response+=text;
   return response;
 }
@@ -141,22 +139,13 @@ struct mg_connection * WebSocketHandler::LookupConnection (std::string action ) 
 //-----------------------------------------------------------------------------
 // Function:  WebSocketHandler::SendWebSocketPacket
 //-----------------------------------------------------------------------------
-bool SendWebSocketPacket (struct mg_connection * nc, const Json::Value root ){
+bool WebSocketHandler::SendWebSocketPacket (struct mg_connection * nc, const Json::Value &root ){
   if (nc) {
-    printf ("bool SendWebSocketPacket (struct mg_connection * nc, const Json::Value root ) NOT IMPLEMENTED\n");
-
-  }
-  return false;
-}
-
-
-//-----------------------------------------------------------------------------
-// Function:  WebSocketHandler::SendWebSocketPacket
-//-----------------------------------------------------------------------------
-bool SendWebSocketPacket (struct mg_connection * nc, const std::string text ){
-  if (nc) {
-    printf ("bool SendWebSocketPacket (struct mg_connection * nc,  const std::string text ) NOT IMPLEMENTED\n");
+    printf ("bool SendWebSocketPacket (struct mg_connection * nc, const Json::Value root )\n");
     
+    Json::StreamWriterBuilder builder;
+    const std::string jsonString = Json::writeString(builder, root);
+    mg_ws_send (nc, jsonString.c_str(), jsonString.length(), WEBSOCKET_OP_TEXT);
   }
   return false;
 }
@@ -165,17 +154,26 @@ bool SendWebSocketPacket (struct mg_connection * nc, const std::string text ){
 //-----------------------------------------------------------------------------
 // Function:  WebSocketHandler::SendWebSocketPacket
 //-----------------------------------------------------------------------------
-bool WebSocketHandler::SendWebSocketPacket(struct mg_connection *nc, const struct mg_str msg) {
+bool WebSocketHandler::SendWebSocketPacket (struct mg_connection * nc, const std::string &text ){
+  if (nc) {
+    printf ("bool SendWebSocketPacket (struct mg_connection * nc,  const std::string text )\n");
+    mg_ws_send (nc, text.c_str(), text.length(), WEBSOCKET_OP_TEXT);
+  }
+  return false;
+}
+
+
+//-----------------------------------------------------------------------------
+// Function:  WebSocketHandler::SendWebSocketPacket
+//-----------------------------------------------------------------------------
+bool WebSocketHandler::SendWebSocketPacket(struct mg_connection *nc, const char* msg) {
 if (nc) {
     char buf[500];
-    char addr[32];
-    printf ("Sending a message\n");
-    mg_sock_addr_to_str(&nc->sa, addr, sizeof(addr),
-                        MG_SOCK_STRINGIFY_IP | MG_SOCK_STRINGIFY_PORT);
 
-    snprintf(buf, sizeof(buf), "%s %.*s", addr, (int) msg.len, msg.p);
-    printf("%s %s\n", __func__, buf); /* Local echo. */
-    mg_send_websocket_frame(nc, WEBSOCKET_OP_TEXT, buf, strlen(buf));    
+    std::string peerAddr(mg_ntoa(&nc->peer, buf, sizeof(buf)));
+    std::string msgToSend = peerAddr + std::string (msg);
+    printf("%s '%s'\n", __func__, msgToSend.c_str()); /* Local echo. */
+    mg_ws_send (nc, msgToSend.c_str(), msgToSend.length(), WEBSOCKET_OP_TEXT);    
     return true;
   }
  return false;
@@ -190,14 +188,12 @@ bool WebSocketHandler::BroadcastWebSocketPacket(struct mg_connection *nc, const 
   if (nc) {
     struct mg_connection *c;
     char buf[500];
-    char addr[32];
-    mg_sock_addr_to_str(&nc->sa, addr, sizeof(addr),
-                        MG_SOCK_STRINGIFY_IP | MG_SOCK_STRINGIFY_PORT);
-    snprintf(buf, sizeof(buf), "%s %.*s", addr, (int) msg.len, msg.p);
-    printf("%s\n", buf); /* Local echo. */
-    for (c = mg_next(nc->mgr, NULL); c != NULL; c = mg_next(nc->mgr, c)) {
+
+    std::string peerAddr(mg_ntoa(&nc->peer, buf, sizeof(buf)));
+    std::string msgToSend = peerAddr + std::string (msg.ptr, msg.len);
+    for (c = nc->mgr->conns; c != nullptr; c = c->next) {
       if (c == nc) continue; /* Don't send to the sender. */
-      mg_send_websocket_frame(c, WEBSOCKET_OP_TEXT, buf, strlen(buf));
+      SendWebSocketPacket(c, msgToSend);
     }
     return true;
   }
@@ -210,6 +206,6 @@ bool WebSocketHandler::BroadcastWebSocketPacket(struct mg_connection *nc, const 
 //-----------------------------------------------------------------------------
 bool WebSocketHandler::ProcessHelloAction( struct mg_connection * nc,  Json::Value args ) {
   printf ("%s\n", __func__);
-  SendWebSocketPacket(nc, mg_mk_str("-- WS Hello Packet Rx") );
+  SendWebSocketPacket(nc, "-- WS Hello Packet Rx");
   return true;
  }
