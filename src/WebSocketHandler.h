@@ -18,8 +18,8 @@ class WebSocketHandler {
 
     bool ProcessWebSocketPacket (struct mg_connection *nc,   struct mg_ws_message *wm );
 
-    bool SendWebSocketPacket (struct mg_connection * nc, const Json::Value root );
-    bool SendWebSocketPacket (struct mg_connection * nc, const std::string text );
+    bool SendWebSocketPacket (struct mg_connection * nc, const Json::Value &root );
+    bool SendWebSocketPacket (struct mg_connection * nc, const std::string &text );
     bool SendWebSocketPacket (struct mg_connection * nc, const char* msg);
     bool BroadcastWebSocketPacket(struct mg_connection *nc, const struct mg_str msg);
 

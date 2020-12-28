@@ -139,7 +139,7 @@ struct mg_connection * WebSocketHandler::LookupConnection (std::string action ) 
 //-----------------------------------------------------------------------------
 // Function:  WebSocketHandler::SendWebSocketPacket
 //-----------------------------------------------------------------------------
-bool SendWebSocketPacket (struct mg_connection * nc, const Json::Value root ){
+bool SendWebSocketPacket (struct mg_connection * nc, const Json::Value &root ){
   if (nc) {
     printf ("bool SendWebSocketPacket (struct mg_connection * nc, const Json::Value root )\n");
     
@@ -154,7 +154,7 @@ bool SendWebSocketPacket (struct mg_connection * nc, const Json::Value root ){
 //-----------------------------------------------------------------------------
 // Function:  WebSocketHandler::SendWebSocketPacket
 //-----------------------------------------------------------------------------
-bool SendWebSocketPacket (struct mg_connection * nc, const std::string text ){
+bool WebSocketHandler::SendWebSocketPacket (struct mg_connection * nc, const std::string &text ){
   if (nc) {
     printf ("bool SendWebSocketPacket (struct mg_connection * nc,  const std::string text )\n");
     mg_ws_send (nc, text.c_str(), text.length(), WEBSOCKET_OP_TEXT);
