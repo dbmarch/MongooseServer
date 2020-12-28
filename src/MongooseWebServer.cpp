@@ -187,7 +187,7 @@ void MongooseWebServer::EventHandler(struct mg_connection *nc, int ev, void *ev_
       if (mg_url_is_ssl (mWebRootDir.c_str())) {
         printf ("MG_EV_ACCEPT SSL\n");
       } else {
-          printf ("MG_EV_ACCEPT isAccepted:%d isWebSocket:%d peer:%s uri: %s\n", 
+          printf ("MG_EV_ACCEPT isAccepted:%d isWebSocket:%d peer:%s\n", 
           nc->is_accepted, nc->is_websocket, peer.c_str());
       }
       break;
