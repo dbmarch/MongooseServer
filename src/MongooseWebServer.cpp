@@ -14,10 +14,9 @@
 MongooseWebServer::MongooseWebServer(Router &r) :
   mRouter {r}
 {
- printf ("%s\n", __func__);
- std::memset (&s_http_server_opts, 0, sizeof(mg_serve_http_opts));
- s_http_server_opts.document_root = "client/build";
-  // s_http_server_opts.extra_headers = "Access-Control-Allow-Origin: *";
+ if (mTrace) printf ("%s\n", __func__);
+ std::memset (&mHttpServerOpts, 0, sizeof(mg_serve_http_opts));
+ mHttpServerOpts.document_root = "client/build";
 }
 
 //-----------------------------------------------------------------------------
@@ -25,7 +24,8 @@ MongooseWebServer::MongooseWebServer(Router &r) :
 //-----------------------------------------------------------------------------
 MongooseWebServer::~MongooseWebServer() 
 {
-  printf ("%s\n", __func__);
+  if (mTrace) printf ("%s\n", __func__);
+  StopServer();
 }
 
 //-----------------------------------------------------------------------------
@@ -36,26 +36,35 @@ void MongooseWebServer::StartServer()
   struct mg_connection *nc;
   cs_stat_t st;
 
-  mg_mgr_init(&mgr, this);   // This data is available nc->mgr->user_data
+  mg_mgr_init(&mMgMgr, this);   // This data is available nc->mgr->user_data
 
-  nc = mg_bind(&mgr, s_http_port, EventHandler);
+  nc = mg_bind(&mMgMgr, mHttpPort, StaticEventHandler);
   if (nc ==  nullptr) {
-    fprintf(stderr, "Unable to bind to %s\n", s_http_port);
+    fprintf(stderr, "Unable to bind to %s\n", mHttpPort);
     return ;
   }
 
   mg_set_protocol_http_websocket(nc);
-  if (mg_stat(s_http_server_opts.document_root, &st) != 0) {
+  if (mg_stat(mHttpServerOpts.document_root, &st) != 0) {
       fprintf(stderr, "%s", "Cannot find web_root directory, exiting\n");
       exit(1);
     }
 
-  printf ("starting server\n");
-  for (;;) {
-    mg_mgr_poll(&mgr, 200);
-  }
-  mg_mgr_free(&mgr);
+  if (mTrace) printf ("Starting Server\n");
+  mServerThread = std::thread(&MongooseWebServer::MongooseEventLoop, this);
+}
 
+//-----------------------------------------------------------------------------
+// Function:  MongooseWebServer::StopServer
+//-----------------------------------------------------------------------------
+void MongooseWebServer::StopServer() 
+{
+   mServerRunning = false;
+
+  if (mServerThread.joinable()) {
+     if (mTrace) printf("%s: Joining accept\n", __func__);
+     mServerThread.join();
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -66,46 +75,44 @@ bool MongooseWebServer::ProcessRoute (struct mg_connection *nc, struct http_mess
   }
 
 //-----------------------------------------------------------------------------
-// Function:  MongooseWebServer::ProcessTextAction
+// Function:  MongooseWebServer::ProcessAction
 //-----------------------------------------------------------------------------
-bool MongooseWebServer::ProcessTextAction( struct mg_connection * nc,  Json::Value args ) {
-  printf ("%s\n", __func__);
-  SendWebSocketPacket(nc, mg_mk_str("-- WS Text Packet Rx") );
-
+bool MongooseWebServer::ProcessAction( std::string action, struct mg_connection * nc,  Json::Value args ) {
+  if (mDebug) printf ("MongooseWebServer::%s %s\n", __func__, action.c_str());
+  SendWebSocketPacket(nc, mg_mk_str("-- WS Packet Rx") );
   return true;
  }
 
+
 //-----------------------------------------------------------------------------
-// Function:  MongooseWebServer::ProcessGraphAction
+// Function:  MongooseWebServer::StaticEventHandler
 //-----------------------------------------------------------------------------
-bool MongooseWebServer::ProcessGraphAction( struct mg_connection * nc,  Json::Value args ) {
-  printf ("%s\n", __func__);
-  SendWebSocketPacket(nc, mg_mk_str("-- WS Graph Packet Rx") );
-  return true;
- }
+void MongooseWebServer::StaticEventHandler(struct mg_connection *nc, int ev, void *ev_data) {
+ 
+  MongooseWebServer * pThis = static_cast<MongooseWebServer*>(nc->mgr->user_data);
+  if (pThis) {
+    pThis->EventHandler(nc,ev,ev_data);
+  } else {
+    printf ("%s user_data is invalid\n", __func__);
+  }
+}
 
 //-----------------------------------------------------------------------------
 // Function:  MongooseWebServer::EventHandler
 //-----------------------------------------------------------------------------
 void MongooseWebServer::EventHandler(struct mg_connection *nc, int ev, void *ev_data) {
   struct http_message *hm = (struct http_message *) ev_data;
+
   struct websocket_message *wm = (struct websocket_message *) ev_data;
- 
-  MongooseWebServer * pThis = static_cast<MongooseWebServer*>(nc->mgr->user_data);
-  
-  if (pThis == nullptr) {
-    printf ("user_data null\n");
-    return;
-  }
 
   switch (ev) {
     case MG_EV_HTTP_REQUEST:
     {
        printf ("%s MG_EV_HTTP_REQUEST\n", __func__);
-       if (pThis->ProcessRoute(nc, hm)) {
+       if (ProcessRoute(nc, hm)) {
          printf ("Route Processed\n");
        } else {
-         mg_serve_http(nc, hm, pThis->GetServerOptions());  // Serves static content
+         mg_serve_http(nc, hm, GetServerOptions());  // Serves static content
        } 
     }
       break;
@@ -120,36 +127,36 @@ void MongooseWebServer::EventHandler(struct mg_connection *nc, int ev, void *ev_
 
     case MG_EV_WEBSOCKET_HANDSHAKE_DONE:
       printf ("%s MG_EV_WEBSOCKET_HANDSHAKE_DONE\n", __func__);
-      pThis->AddWebSocketConnection(nc);
+      AddWebSocketConnection(nc);
       break;
 
     case MG_EV_WEBSOCKET_FRAME: {
       printf ("%s MG_EV_WEBSOCKET_FRAME\n", __func__);
-      pThis->ProcessWebSocketPacket(nc, wm);
+      ProcessWebSocketPacket(nc, wm);
       break;
     }
 
     case MG_EV_WEBSOCKET_CONTROL_FRAME: {
-      printf ("%s MG_EV_WEBSOCKET_CONTROL_FRAME\n", __func__);
+      if (mTrace) printf ("%s MG_EV_WEBSOCKET_CONTROL_FRAME\n", __func__);
       break;
     }
 
     case MG_EV_RECV:
-      printf ("%s MG_EV_RECV\n", __func__);
+      if (mTrace) printf ("%s MG_EV_RECV\n", __func__);
       break;
 
     case MG_EV_SSI_CALL:
-      pThis->HandleSsiCall(nc, (const char*) ev_data);
+      // pThis->HandleSsiCall(nc, (const char*) ev_data);
       break;
 
     case MG_EV_SEND:
-      printf ("%s MG_EV_SEND\n", __func__);
+      if (mTrace) printf ("%s MG_EV_SEND\n", __func__);
       break;
 
     case MG_EV_CLOSE:
       printf ("%s MG_EV_CLOSE\n", __func__);
-      if (pThis->IsWebsocket(nc)) {
-        pThis->RemoveWebSocketConnection(nc);
+      if (IsWebsocket(nc)) {
+        RemoveWebSocketConnection(nc);
       }
       break;
     
@@ -169,13 +176,36 @@ void MongooseWebServer::EventHandler(struct mg_connection *nc, int ev, void *ev_
 //-----------------------------------------------------------------------------
 // Function:  MongooseWebServer::HandleSsiCall
 //-----------------------------------------------------------------------------
-void MongooseWebServer::HandleSsiCall(struct mg_connection *nc, const char *param){
-  if (strcmp(param, "setting1") == 0) {
-    mg_printf_html_escape(nc, "%s", s_settings.setting1);
-  } else if (strcmp(param, "setting2") == 0) {
-    mg_printf_html_escape(nc, "%s", s_settings.setting2);
+// void MongooseWebServer::HandleSsiCall(struct mg_connection *nc, const char *param){
+//   if (strcmp(param, "setting1") == 0) {
+//     mg_printf_html_escape(nc, "%s", s_settings.setting1);
+//   } else if (strcmp(param, "setting2") == 0) {
+//     mg_printf_html_escape(nc, "%s", s_settings.setting2);
+//   }
+// }
+
+
+//-----------------------------------------------------------------------------
+// Function:  MongooseWebServer::MongooseEventLoop
+//-----------------------------------------------------------------------------
+void *MongooseWebServer::MongooseEventLoop()
+{
+  if (mDebug) printf("MongooseWebServer RUNNING\n");
+
+  mServerRunning = true;
+  while( mServerRunning ) {
+     // let the cesanta mongoose server do its thing.
+     mg_mgr_poll( &mMgMgr, mPollingInterval );
   }
+   
+  // the server is no longer running, so destroy it.
+  // Close and deallocate all active connections.
+  mg_mgr_free( &mMgMgr );
+
+  if (mDebug) printf("MongooseWebServer STOPPED\n");
+  return nullptr;
 }
+
 
 
 //-----------------------------------------------------------------------------

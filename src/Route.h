@@ -1,11 +1,12 @@
-#ifndef MONGOOSEWEBSERVER_H__
-#define MONGOOSEWEBSERVER_H__
+#ifndef ROUTE_H__
+#define ROUTE_H__
 
 #include <string>
 #include <vector>
 #include <map>
+#include <functional>
 
-
+#include "mongoose.h"
 
 class Route {
   public:
@@ -18,26 +19,47 @@ class Route {
        OPTIONS,
     };
     
-  using RouteCallback = bool (*)(struct mg_connection *nc, struct http_message *hm) ;
+  using CallbackFcn = std::function<bool( struct mg_connection *nc, struct http_message *hm)>;
 
-  Route (Route::Verb v, std::string route, RouteCallback handler);
+  Route (std::string route); 
 
-  ~Route() ;
+  virtual ~Route() ;
   
-  bool IsMatch (Route::Verb verb , std::string route);
-  bool IsMatch (std::string verb , std::string route);
- 
+  Route(const Route&); 
+  Route& operator=(const Route& r);  // Copy Assignment
+
+  void Get( CallbackFcn cb);   // Adds the GET callback
+  void Post( CallbackFcn cb);  // Adds the GET callback
+  void Put( CallbackFcn cb);   // Adds the GET callback
+  void Delete(CallbackFcn cb);  // Provide the Delete Callback
+  void Options(CallbackFcn cb);
+
+  bool UriMatch(std::string uri);
+  std::vector<std::string> ExtractRouteTokens(std::string route);
+
   std::string VerbToString(Route::Verb) const ;
   Route::Verb GetVerb(std::string s);
 
-  bool Process (struct mg_connection *nc, struct http_message *hm);
-
+  bool ProcessRoute (struct mg_connection *nc, struct http_message *hm, std::string &path, std::string &routeParams);
+  std::string GetRoute() const {return mRoute;}
+  
  protected:
-   Verb mVerb;
-   std::string mRoute;
-   RouteCallback mHandler;
+  bool mTrace{false};
+  bool mDebug{true};
+  
+  std::string mRoute; // Our route
 
+  bool mExact{true};  // Do we need exact match?
 
+  std::vector<std::string> mRouteTokens{};
+  
+  std::string mRouteParams{};   // the route params
+
+  CallbackFcn mGetCb{};
+  CallbackFcn mPostCb{};
+  CallbackFcn mPutCb{};
+  CallbackFcn mDeleteCb{};
+  CallbackFcn mOptionsCb{};
   const std::map<Verb, std::string> mVerbMap {
       {Route::GET,   "GET"},
       {Route::POST,  "POST"},

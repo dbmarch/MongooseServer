@@ -19,9 +19,8 @@ WebSocketHandler::~WebSocketHandler() {
   printf ("%s", __func__);
 }
 
-
 //-----------------------------------------------------------------------------
-// Function: WebSocketHandler::ProcessPacket
+// Function: WebSocketHandler::ProcessWebSocketPacket
 // 
 // We are going to look for a JSON object with the following shape:
 // {
@@ -72,18 +71,13 @@ bool WebSocketHandler::ProcessWebSocketPacket (struct mg_connection *nc,   struc
   printf ("Extracting data from the JSON object:\n");
   std::string actionField (root["action"].asString());
 
-  if (actionField == std::string (WS_ACTION_TEXT)) {
-    mWsConnections[nc] = actionField;
-    handled = ProcessTextAction(nc, root["args"]);
-  } else if (actionField == std::string (WS_ACTION_GRAPH)) {
-    mWsConnections[nc] = actionField;
-    handled = ProcessGraphAction(nc, root["args"]);
-  } else if (actionField == std::string (WS_ACTION_HELLO)) {
+  if (actionField == std::string (WS_ACTION_HELLO)) {
     mWsConnections[nc] = actionField;
     handled = ProcessHelloAction(nc, root["args"]);
   } else {
-    printf ("Unhandled Websocket Action: %s\n", actionField.c_str());
-  }
+    mWsConnections[nc] = actionField;
+    handled = ProcessAction(actionField, nc, root["args"]);
+  } 
 
   return handled;
 }
@@ -189,7 +183,6 @@ if (nc) {
 }
 
 
-
 //-----------------------------------------------------------------------------
 // Function:  WebSocketHandler::Broadcast
 //-----------------------------------------------------------------------------
@@ -200,7 +193,6 @@ bool WebSocketHandler::BroadcastWebSocketPacket(struct mg_connection *nc, const 
     char addr[32];
     mg_sock_addr_to_str(&nc->sa, addr, sizeof(addr),
                         MG_SOCK_STRINGIFY_IP | MG_SOCK_STRINGIFY_PORT);
-
     snprintf(buf, sizeof(buf), "%s %.*s", addr, (int) msg.len, msg.p);
     printf("%s\n", buf); /* Local echo. */
     for (c = mg_next(nc->mgr, NULL); c != NULL; c = mg_next(nc->mgr, c)) {

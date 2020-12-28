@@ -1,21 +1,18 @@
 #ifndef WEBSOCKETHANDLER_H__
 #define WEBSOCKETHANDLER_H__
+
 #include "mongoose.h"
 #include "json.h"
-
-
 
 class WebSocketHandler {
   public:
 
-    const char* WS_ACTION_NONE="None";
-    const char* WS_ACTION_HELLO="Hello";
-    const char* WS_ACTION_TEXT="Text";
-    const char* WS_ACTION_GRAPH="Graph";
-    
     WebSocketHandler ();
 
-    ~WebSocketHandler() ;
+    virtual ~WebSocketHandler();
+
+    WebSocketHandler(const WebSocketHandler&) = delete;    
+    WebSocketHandler& operator=(const WebSocketHandler&) = delete;
 
  protected:
 
@@ -29,16 +26,20 @@ class WebSocketHandler {
     void AddWebSocketConnection(struct mg_connection *nc);
     void RemoveWebSocketConnection(struct mg_connection *nc);
 
+    virtual bool ProcessAction( std::string action, struct mg_connection *nc, Json::Value root ) {return false; }
+
     std::string TaggedString (struct mg_connection *nc, std::string text);
 
     struct mg_connection * LookupConnection (std::string action );
 
-    // For now just hard code the actionhandler.   
-    virtual bool ProcessTextAction( struct mg_connection *nc, Json::Value root ) {return false; }
-    virtual bool ProcessGraphAction( struct mg_connection *nc, Json::Value root ) {return false; }
-    bool ProcessHelloAction( struct mg_connection *nc, Json::Value root );   // Ping / health check
-
   private:
+     // packet types.  Rest are user defined.  They just get routed to other side
+     static constexpr char const * WS_ACTION_NONE="None";    // used when we can't find descriptor
+     static constexpr char const * WS_ACTION_HELLO="Hello";  // This is an internal ping
+  
+     // Ping / health check
+     bool ProcessHelloAction( struct mg_connection *nc, Json::Value root );   
+
     std::map<struct mg_connection*, std::string> mWsConnections; 
 };
 

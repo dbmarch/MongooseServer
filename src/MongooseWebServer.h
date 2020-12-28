@@ -1,4 +1,9 @@
+#ifndef MONGOOSE_WEB_SERVER_H__
+#define MONGOOSE_WEB_SERVER_H__
+
 #include <vector>
+#include <thread>
+
 #include "mongoose.h"
 #include "Router.h"
 #include "WebSocketHandler.h"
@@ -9,37 +14,49 @@ public:
 
   MongooseWebServer (Router &r);
 
-  ~MongooseWebServer ();
+  virtual ~MongooseWebServer ();
 
-  static void EventHandler(mg_connection *c, int ev, void *p);
+  MongooseWebServer(const MongooseWebServer&) = delete;    
+  MongooseWebServer& operator=(const MongooseWebServer& r) = delete;
 
-  void StartServer();
+  static void StaticEventHandler(mg_connection *c, int ev, void *p);
+  void EventHandler(mg_connection *c, int ev, void *p);
+
+  virtual void StartServer();
+  virtual void StopServer();
+
+  std::string GetServerPort() const {return std::string(mHttpPort);}
 
   bool ProcessRoute (struct mg_connection *nc, struct http_message *hm);
 
-  mg_serve_http_opts GetServerOptions() { return s_http_server_opts;}
+  mg_serve_http_opts GetServerOptions() { return mHttpServerOpts;}
 
-  void HandleSsiCall(struct mg_connection *nc, const char *param);
+  // void HandleSsiCall(struct mg_connection *nc, const char *param);
 
   int IsWebsocket(const struct mg_connection *nc);
 
   // Inherit from WebSocketHandler
-  virtual bool ProcessTextAction( struct mg_connection * nc, Json::Value root );
-  virtual bool ProcessGraphAction( struct mg_connection * nc, Json::Value root );
+  virtual bool ProcessAction( std::string action, struct mg_connection * nc, Json::Value root ) override;  
 
-  struct mg_serve_http_opts s_http_server_opts;
   
 protected:
+  void * MongooseEventLoop();
 
-  const char *s_http_port {"8000"};
+  bool mTrace{false};
+  bool mDebug{true};
 
-  struct mg_mgr mgr;
+  struct mg_serve_http_opts mHttpServerOpts;
+
+  const char *mHttpPort {"8000"};
+  unsigned short  mPollingInterval{100};   // Every 100msec
+
+  struct mg_mgr mMgMgr;
 
   Router &mRouter;
 
+  std::thread mServerThread;
 
-  struct device_settings {
-    char setting1[100];
-    char setting2[100];
-  } s_settings = {"value1", "value2"};
+  bool mServerRunning {false};
 };
+
+#endif
