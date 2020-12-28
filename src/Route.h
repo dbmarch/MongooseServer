@@ -19,7 +19,7 @@ class Route {
        OPTIONS,
     };
     
-  using CallbackFcn = std::function<bool( struct mg_connection *nc, struct http_message *hm)>;
+  using CallbackFcn = std::function<bool( struct mg_connection *nc, struct mg_http_message *hm)>;
 
   Route (std::string route); 
 
@@ -40,9 +40,9 @@ class Route {
   std::string VerbToString(Route::Verb) const ;
   Route::Verb GetVerb(std::string s);
 
-  bool ProcessRoute (struct mg_connection *nc, struct http_message *hm, std::string &path, std::string &routeParams);
+  bool ProcessRoute (struct mg_connection *nc, struct mg_http_message *hm, std::string &path, std::string &routeParams);
   std::string GetRoute() const {return mRoute;}
-  
+
  protected:
   bool mTrace{false};
   bool mDebug{true};

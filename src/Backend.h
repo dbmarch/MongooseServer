@@ -23,16 +23,20 @@ protected:
 
   virtual void AddRoutes();
 
-  bool ExtractJsonFromBody(Json::Value & root, struct mg_connection *nc, struct http_message *hm);
+  void ServeFile (struct mg_connection *nc, struct mg_http_message *hm, std::string fileName, std::string mimeType);
+
+  bool ExtractJsonFromBody(Json::Value & root, struct mg_connection *nc, struct mg_http_message *hm);
   
   void SendReply (struct mg_connection *nc, int httpCode);
 
   void SendReply (struct mg_connection *nc, int httpCode, std::string content);
+  
+  void SendReply (struct mg_connection *nc, int httpCode,  Json::Value &root );
 
-  void SendError (struct mg_connection *nc, int httpCode, const char* reason);
+  void SendError (struct mg_connection *nc, int httpCode, std::string reason);
 
   // The one default route we provide
-  bool HandleCors (struct mg_connection *nc, struct http_message *hm);
+  bool HandleCors (struct mg_connection *nc, struct mg_http_message *hm);
 };
 
 #endif

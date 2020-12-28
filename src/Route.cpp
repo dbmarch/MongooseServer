@@ -79,8 +79,8 @@ std::vector<std::string> Route::ExtractRouteTokens(std::string route) {
 //-----------------------------------------------------------------------------
 // Function: Route::ProcessRoute
 //-----------------------------------------------------------------------------
-bool Route::ProcessRoute(struct mg_connection *nc, struct http_message *hm, std::string &path, std::string &routeParams ) {
-  std::string verb {hm->method.p, hm->method.len};
+bool Route::ProcessRoute(struct mg_connection *nc, struct mg_http_message *hm, std::string &path, std::string &routeParams ) {
+  std::string verb {hm->method.ptr, hm->method.len};
   mRouteParams = std::string();
   if (mTrace) printf ("'%s' ProcessRoute %s %s\n", mRoute.c_str(), verb.c_str(), path.c_str());
   if (UriMatch(path))

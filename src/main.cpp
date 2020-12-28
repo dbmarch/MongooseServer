@@ -20,8 +20,11 @@ void sigintHandler (int sigNum) {
 //-----------------------------------------------------------------------------
 int main(void) {
   Services myServices; // Get our back end services.
+  const std::string rootFolder{"client/build"};
+  const std::string serverUrl {"https://localhost:8000"};
   
-  MongooseWebServer webServer(myServices);
+  MongooseWebServer webServer(myServices, rootFolder, serverUrl);
+  
   webServer.StartServer();
   serverRunning = true;
   

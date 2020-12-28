@@ -20,14 +20,14 @@ public:
 
   void AddRoute (Route &&route);
 
-  bool ProcessRoute (struct mg_connection *nc, struct http_message *hm);
+  bool ProcessRoute (struct mg_connection *nc, struct mg_http_message *hm);
 
   void ClearRoutes();
 
 protected:
   bool mTrace{false};
   bool mDebug{true};
-  
+
   std::vector <Route> mRoutes;    // all of the routes in our router
   std::string mRouteParams{};     // Currently support 1 route param per route.  (Should be a vector)
 
