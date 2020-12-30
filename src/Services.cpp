@@ -258,7 +258,7 @@ bool Services::HandleFileGetSignalGraph (struct mg_connection *nc, struct mg_htt
   }
 
   std::string commandLine("scripts/CreateSignal.py");
-  commandLine += " " + std::to_string(freq) + " " + std::to_string(samples);
+  commandLine += " -f" + std::to_string(freq) + " -n" + std::to_string(samples);
 
 
   printf ("Running Script: %s\n", commandLine.c_str());
