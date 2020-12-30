@@ -28,7 +28,7 @@ def main() :
     elif opt in ("-n", "--samples"):
          numSamplesArg = arg
          print ("Parsed numSamples Argument", arg)
-         if (int(numSamplesArg)>0):
+         if int(numSamplesArg)>0 and int(numSamplesArg) < 10000:
            numSamples = int(numSamplesArg)
     elif opt in ("--file"):
          fileName = arg
