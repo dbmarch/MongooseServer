@@ -7,25 +7,27 @@ import sys, getopt
 
 def main() :
   print ("Creating a Signal Graph\n")
-  freq = 1000
-  freq2=0
+  freq1= 1000
+  freq2= 1000
   numSamples = 500
+  stepSize = 0.002
+
   fileName = "./test-data/signal.json"
   try:
-    opts, args = getopt.getopt(sys.argv[1:],"hf:n:",["freq=","samples=", "file=", "freq2="])
+    opts, args = getopt.getopt(sys.argv[1:],"hf:n:",["freq1=","samples=", "file=", "freq2=", "step="])
   except getopt.GetoptError:
-      print ('CreateSignal.py -f<freq> -n<samples> --file=<fileName> --freq2=<freq2>')
+      print ('CreateSignal.py --freq1=<freq> -n<samples> --file=<fileName> --freq2=<freq2> --step=<step>')
       sys.exit(2)
   print ("Options:", opts)
   for opt, arg in opts:
     if opt == '-h':
        print ('CreateSignal.py -f<freq> -n<samples>')
        sys.exit()
-    elif opt in ("-f", "--freq"):
+    elif opt in ("-f", "--freq1"):
          freqArg = arg
          print ("Parsed Freq Argument", arg)
          if (int(freqArg)>0):
-           freq = int(freqArg)
+           freq1 = int(freqArg)
     elif opt in ("-n", "--samples"):
          numSamplesArg = arg
          print ("Parsed numSamples Argument", arg)
@@ -36,20 +38,28 @@ def main() :
          print ("fileName", fileName)
     elif opt in ("--freq2"):
          freq2= int(arg)
+    elif (opt in("--step")):
+         stepSize = arg.astype(np.int64)
   
   amplitude = 100
-  time = np.arange(1, numSamples, 1)
-  amplitude = amplitude * np.sin(freq*time/(2*np.pi))
-  wave2= amplitude * np.sin(freq2*time/(2*np.pi))
-  print ("Freq", freq)
+  bestStep = 1 / (2*max(freq1,freq2))
+  if bestStep < stepSize:
+      stepSize = bestStep
+
+  time = np.arange(0, numSamples*stepSize, stepSize)
+  f1 = amplitude * np.sin(freq1*time/(2*np.pi))
+  f2 = amplitude * np.sin(freq2*time/(2*np.pi))
+  mix = f1+f2
+
+  print ("Freq1", freq1)
   print ("Samples", numSamples)
-  if freq2 !=0:
-     print("Freq2", freq2)
+  print ("Freq2", freq2)
+  print ("step", stepSize)
   
   data = []
   for i in range(len(time)):
-    label = freq/numSamples * i
-    dataPoint = {"label": label ,"x": time[i], "y" :amplitude[i], "f2" : wave2[i], "mix": amplitude[i] + wave2[i]}
+    label = freq1/numSamples * i
+    dataPoint = {"label": label ,"x": time[i], "f1" :f1[i], "f2" : f2[i], "mix": mix[i]}
     data.append( dataPoint)
   
   jsonData = json.dumps(data, cls=NpEncoder )

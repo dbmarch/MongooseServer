@@ -240,17 +240,24 @@ bool Services::HandleFileGetGraph2 (struct mg_connection *nc, struct mg_http_mes
 bool Services::HandleFileGetSignalGraph (struct mg_connection *nc, struct mg_http_message *hm) {
   printf ("%s\n", __func__);
   std::string fileName {"test-data/signal.json"};
-  std::string freqParam = GetQueryParam("freq");
+  std::string freq1Param = GetQueryParam("freq1");
+  std::string freq2Param = GetQueryParam("freq2");
   std::string samplesParam = GetQueryParam("samples");
-  unsigned long freq = 1000;
+  unsigned long freq1 = 1000;
+  unsigned long freq2 = 1000;
   size_t samples = 500;
 
   try {
-    freq = std::stoul(freqParam, nullptr, 0);
+    freq1 = std::stoul(freq1Param, nullptr, 0);
   } catch ( std::exception &ex) {
-    printf ("invalid freq %s\n", freqParam.c_str());
+    printf ("invalid freq %s\n", freq1Param.c_str());
   }
-
+  
+  try {
+    freq2 = std::stoul(freq2Param, nullptr, 0);
+  } catch ( std::exception &ex) {
+    printf ("invalid freq %s\n", freq2Param.c_str());
+  }
   try {
     samples = std::stoul(samplesParam, nullptr, 0);
   } catch ( std::exception &ex) {
@@ -258,8 +265,9 @@ bool Services::HandleFileGetSignalGraph (struct mg_connection *nc, struct mg_htt
   }
 
   std::string commandLine("scripts/CreateSignal.py");
-  commandLine += " -f" + std::to_string(freq) + " -n" + std::to_string(samples);
-
+  commandLine += " --freq1" + std::to_string(freq1) 
+              + " --freq2=" + std::to_string(freq2)
+              + " -n" + std::to_string(samples) ;
 
   printf ("Running Script: %s\n", commandLine.c_str());
   if (system (commandLine.c_str()) == 0) {
