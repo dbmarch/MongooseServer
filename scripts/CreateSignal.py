@@ -47,8 +47,9 @@ def main() :
       stepSize = bestStep
 
   time = np.arange(0, numSamples*stepSize, stepSize)
-  f1 = amplitude * np.sin(freq1*time/(2*np.pi))
-  f2 = amplitude * np.sin(freq2*time/(2*np.pi))
+  # use precision 2 since we scale by 100.
+  f1 = np.around(amplitude * np.sin(freq1*time/(2*np.pi)), 1)
+  f2 = np.around(amplitude * np.sin(freq2*time/(2*np.pi)), 1)
   mix = f1+f2
 
   print ("Freq1", freq1)
@@ -58,7 +59,7 @@ def main() :
   
   data = []
   for i in range(len(time)):
-    label = freq1/numSamples * i
+    label = np.around(freq1/numSamples * i, 2)
     dataPoint = {"label": label ,"x": time[i], "f1" :f1[i], "f2" : f2[i], "mix": mix[i]}
     data.append( dataPoint)
   
