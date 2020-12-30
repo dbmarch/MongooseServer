@@ -22,6 +22,8 @@ public:
 
   bool HandleFileGetGraph2 (struct mg_connection *nc, struct mg_http_message *hm);
 
+  bool HandleFileGetSignalGraph (struct mg_connection *nc, struct mg_http_message *hm);
+  
 protected:
   virtual void AddRoutes() override;
 

@@ -45,6 +45,10 @@ void Services::AddRoutes() {
   fileGraph2.Get(std::bind(&Services::HandleFileGetGraph2, this, std::placeholders::_1, std::placeholders::_2));
   AddRoute(std::move(fileGraph2));
 
+  Route fileSignal ("/file/signal");
+  fileSignal.Get(std::bind(&Services::HandleFileGetSignalGraph, this, std::placeholders::_1, std::placeholders::_2));
+  AddRoute(std::move(fileSignal));
+
   Route fileLogfile ("/file/logfile");
   fileLogfile.Get(std::bind(&Services::HandleFileGetLogfile, this, std::placeholders::_1, std::placeholders::_2));
   AddRoute(std::move(fileLogfile));
@@ -162,11 +166,8 @@ bool Services::HandleFileGet (struct mg_connection *nc, struct mg_http_message *
 
   printf ("%s\n", __func__);
   std::string fileName {"test-data/test.json"};
-  
-  // mg_http_serve_file(nc, hm, "test-data/test.json",
-  //                           mg_mk_str("text/plain"), mg_mk_str(""));
-  
-  ServeFile (nc, hm, fileName, "application/json");                          
+  const char* mimeType="application/json\r\nAccess-Control-Allow-Origin: http://localhost:3000";
+  ServeFile (nc, hm, fileName, mimeType);
   printf ("Sent File: '%s'\n", fileName.c_str());
   return true;
 }
@@ -178,9 +179,8 @@ bool Services::HandleFileGetJson (struct mg_connection *nc, struct mg_http_messa
 
   printf ("%s\n", __func__);
   std::string fileName {"test-data/test.json"};
-  
-  // mg_http_serve_file(nc, hm, fileName, mg_mk_str("application/json"), mg_mk_str(""));
-  ServeFile (nc, hm, fileName, "application/json");
+  const char* mimeType="application/json\r\nAccess-Control-Allow-Origin: http://localhost:3000";
+  ServeFile (nc, hm, fileName, mimeType);
   printf ("Sent File: '%s'\n", fileName.c_str());
   return true;
 }
@@ -192,8 +192,8 @@ bool Services::HandleFileGetLogfile (struct mg_connection *nc, struct mg_http_me
 
   printf ("%s\n", __func__);
   std::string fileName {"test-data/logfile.txt"};
-  
-  ServeFile (nc, hm, fileName, "text/plain");
+  const char* mimeType="text/plain\r\nAccess-Control-Allow-Origin: http://localhost:3000";
+  ServeFile (nc, hm, fileName, mimeType);
 
   printf ("Sent File: '%s'\n", fileName.c_str());
   return true;
@@ -208,7 +208,8 @@ bool Services::HandleFileGetGraph1 (struct mg_connection *nc, struct mg_http_mes
   printf ("%s\n", __func__);
   std::string fileName {"test-data/graph-data-1.json"};
   
-  ServeFile(nc, hm, fileName, "application/json");
+  const char* mimeType="application/json\r\nAccess-Control-Allow-Origin: http://localhost:3000";
+  ServeFile(nc, hm, fileName, mimeType);
 
   printf ("Sent File: '%s'\n", fileName.c_str());
   return true;
@@ -225,8 +226,47 @@ bool Services::HandleFileGetGraph2 (struct mg_connection *nc, struct mg_http_mes
   if (system ("scripts/CreateGraph.py") == 0) {
     printf ("Script executed successfully\n");
   }
-  
-  ServeFile(nc, hm, fileName, "application/json");
+  const char* mimeType="application/json\r\nAccess-Control-Allow-Origin: http://localhost:3000";
+  ServeFile(nc, hm, fileName, mimeType);
+
+  printf ("Sent File: '%s'\n", fileName.c_str());
+  return true;
+}
+
+
+//-----------------------------------------------------------------------------
+// Function: HandleFileGetGraph1
+//-----------------------------------------------------------------------------
+bool Services::HandleFileGetSignalGraph (struct mg_connection *nc, struct mg_http_message *hm) {
+  printf ("%s\n", __func__);
+  std::string fileName {"test-data/signal.json"};
+  std::string freqParam = GetQueryParam("freq");
+  std::string samplesParam = GetQueryParam("samples");
+  unsigned long freq = 1000;
+  size_t samples = 500;
+
+  try {
+    freq = std::stoul(freqParam, nullptr, 0);
+  } catch ( std::exception &ex) {
+    printf ("invalid freq %s\n", freqParam.c_str());
+  }
+
+  try {
+    samples = std::stoul(samplesParam, nullptr, 0);
+  } catch ( std::exception &ex) {
+    printf ("invalid numsamples %s\n", samplesParam.c_str());
+  }
+
+  std::string commandLine("scripts/CreateSignal.py");
+  commandLine += " " + std::to_string(freq) + " " + std::to_string(samples);
+
+
+  printf ("Running Script: %s\n", commandLine.c_str());
+  if (system (commandLine.c_str()) == 0) {
+    printf ("Script executed successfully\n");
+  }
+  const char* mimeType="application/json\r\nAccess-Control-Allow-Origin: http://localhost:3000";
+  ServeFile(nc, hm, fileName, mimeType);
 
   printf ("Sent File: '%s'\n", fileName.c_str());
   return true;

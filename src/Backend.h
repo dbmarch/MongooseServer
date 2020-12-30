@@ -18,10 +18,12 @@ public:
 protected:
   static constexpr char const * JSON_HEADERS {
     "Access-Control-Allow-Headers: Content-Type\r\n"
+    "Access-Control-Allow-Origin: http://localhost:3000\r\n"
     "Content-Type: application/json\r\n"
   };
   static constexpr char const * TEXT_HEADERS {
     "Access-Control-Allow-Headers: Content-Type\r\n"
+    "Access-Control-Allow-Origin: http://localhost:3000\r\n"
     "Content-Type: text/plain\r\n"
   };
 
