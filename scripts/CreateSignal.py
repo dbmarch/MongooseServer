@@ -50,7 +50,7 @@ def main() :
   # use precision 2 since we scale by 100.
   f1 = np.around(amplitude * np.sin(freq1*time/(2*np.pi)), 1)
   f2 = np.around(amplitude * np.sin(freq2*time/(2*np.pi)), 1)
-  mix = f1+f2
+  mix = np.around(f1+f2,1)
 
   print ("Freq1", freq1)
   print ("Samples", numSamples)
@@ -59,7 +59,7 @@ def main() :
   
   data = []
   for i in range(len(time)):
-    label = np.around(freq1/numSamples * i, 2)
+    label = np.around(freq1/numSamples * i, 1)
     dataPoint = {"label": label ,"x": time[i], "f1" :f1[i], "f2" : f2[i], "mix": mix[i]}
     data.append( dataPoint)
   
