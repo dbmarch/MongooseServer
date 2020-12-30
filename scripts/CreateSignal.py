@@ -51,6 +51,8 @@ def main() :
   f1 = np.around(amplitude * np.sin(freq1*time/(2*np.pi)), 1)
   f2 = np.around(amplitude * np.sin(freq2*time/(2*np.pi)), 1)
   mix = np.around(f1+f2,1)
+ 
+  time = np.around(time, 5)
 
   print ("Freq1", freq1)
   print ("Samples", numSamples)
