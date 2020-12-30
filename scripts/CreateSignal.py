@@ -8,12 +8,13 @@ import sys, getopt
 def main() :
   print ("Creating a Signal Graph\n")
   freq = 1000
+  freq2=0
   numSamples = 500
   fileName = "./test-data/signal.json"
   try:
-    opts, args = getopt.getopt(sys.argv[1:],"hf:n:",["freq=","samples=", "file="])
+    opts, args = getopt.getopt(sys.argv[1:],"hf:n:",["freq=","samples=", "file=", "freq2="])
   except getopt.GetoptError:
-      print ('CreateSignal.py -f<freq> -n<samples> --file=<fileName>')
+      print ('CreateSignal.py -f<freq> -n<samples> --file=<fileName> --freq2=<freq2>')
       sys.exit(2)
   print ("Options:", opts)
   for opt, arg in opts:
@@ -33,18 +34,22 @@ def main() :
     elif opt in ("--file"):
          fileName = arg
          print ("fileName", fileName)
-         
+    elif opt in ("--freq2"):
+         freq2= int(arg)
   
   amplitude = 100
   time = np.arange(1, numSamples, 1)
   amplitude = amplitude * np.sin(freq*time/(2*np.pi))
+  wave2= amplitude * np.sin(freq2*time/(2*np.pi))
   print ("Freq", freq)
   print ("Samples", numSamples)
+  if freq2 !=0:
+     print("Freq2", freq2)
   
   data = []
   for i in range(len(time)):
     label = freq/numSamples * i
-    dataPoint = {"label": label ,"x": time[i], "y" :amplitude[i]}
+    dataPoint = {"label": label ,"x": time[i], "y" :amplitude[i], "f2" : wave2[i], "mix": amplitude[i] + wave2[i]}
     data.append( dataPoint)
   
   jsonData = json.dumps(data, cls=NpEncoder )
